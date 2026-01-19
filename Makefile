@@ -1,34 +1,80 @@
+# Primitives
+################################################################
+
+null=
+space=$(null) $(null)
+$(space)=$(null)
+question-mark=?
+
+
+# Make Flags
+################################################################
+
 MAKEFLAGS+=\
   --no-builtin-rules\
   --no-builtin-variables\
   --print-directory\
   --warn-undefined-variables
 
+# Use Bash, not sh.
 SHELL:=/bin/bash
 
-.DEFAULT_GOAL:=all
+# The default goal isn't necessarily the first in the file.
+.DEFAULT_GOAL:=@default
+.PHONY:@default
+
+# Changing any of the makefiles causes a rebuild.
 .EXTRA_PREREQS:=$(MAKEFILE_LIST)
+
+# Don't require tab characters.
 .RECIPEPREFIX:=;
+
+# Bash flags.
 .SHELLFLAGS:=\
   -O nullglob\
   -o errexit\
   -o pipefail\
   -c
 
-# Directives
+
+# Make Directives
+################################################################
 
+# Delete possibly corrupt partial outputs on error.
 .DELETE_ON_ERROR:
+
+# Use a single shell invocation per recipe.
 .ONESHELL:
 
-# Make
+
+# Make Aliases
+################################################################
 
 first-prerequisite=$<
+
+prerequisite-bag=$+
+
 prerequisite-set=$^
+
 second-prerequisite=$(word 2,$(prerequisite-set))
+
 stem=$*
+
 target=$@
 
+
+# Functions
+################################################################
+
+# Append $1 and $2,
+# adding a space between them only if they're both nonempty.
+space.2=$(if $1,$(if $2,$1$(space)$2,$1),$2)
+
+
 # Commands
+################################################################
+
+CC:=cc
 
 #HD=hexdump $(hexdump-flags)
 HD=xxd $(xxd-flags)
@@ -36,13 +82,13 @@ HD=xxd $(xxd-flags)
 DIFF=colordiff $(diff-flags)
 #DIFF=git diff $(git-diff-flags)
 
-LINK=$(CC) $(LDFLAGS)
+LINK=$(call space.2,$(CC),$(LDFLAGS))
 
 NB=./nb
 
-# Flags
-
-CC:=cc
+
+# Extra Flags
+################################################################
 
 CFLAGS:=
 
@@ -52,14 +98,20 @@ LDFLAGS:=
 
 NBFLAGS:=
 
+
+# Required Flags
+################################################################
+
 compile-flags:=\
+  -g\
+  \
   -Wall\
   -Wextra\
   -Wpedantic\
   \
   -Wno-overlength-strings\
   \
-  -std=c23\
+  -std=c23
 
 diff-flags:=\
   --expand-tabs\
@@ -79,14 +131,20 @@ xxd-flags:=\
   -a\
   -g 4
 
+
 # Recipes
+################################################################
+
+# "it" means the first prerequisite.
+# "them" means the prerequisite set or bag.
 
 compile-it=\
-  $(CC)\
-    $(compile-flags)\
-    -c $(first-prerequisite)\
-    -o $(target)\
-    $(CFLAGS)
+  $(call space.2,$\
+    $(CC)\
+      $(compile-flags)\
+      -c $(first-prerequisite)\
+      -o $(target),$\
+    $(CFLAGS))
 
 diff-them=\
   $(DIFF)\
@@ -94,47 +152,78 @@ diff-them=\
     $(second-prerequisite)
 
 hexdump-it=\
-  $(HD)\
-    $(first-prerequisite)\
-    >$(target)\
-    $(HDFLAGS)
+  $(call space.2,$\
+    $(HD)\
+      $(first-prerequisite)\
+      >$(target),$\
+    $(HDFLAGS))
 
 link-it=\
   $(LINK)\
-    $(prerequisite-set)\
+    $(prerequisite-bag)\
     -o $(target)
 
-nb-it=\
+nb=\
   $(NB) $(target)
 
+
 # Rules
+################################################################
 
-.PHONY:all
+@default:@all
 
-  all:build
-  .PHONY:build
-  build:nb
+  @all:@build
+  @build:nb
 
-    nb:nb.o;$(link-it)
+    nb:\
+      nb.o\
+      ;$(link-it)
 
-      nb.o:nb.c;$(compile-it)
+      nb.o:\
+        nb.c\
+        ;$(compile-it)
 
-  all:test
-  .PHONY:test
-  test:want/reow.hex have/reow.hex;$(diff-them)
+  @all:@test
+  @test:\
+    want/reow.hex\
+    have/reow.hex\
+    ;$(diff-them)
 
-    want/reow.hex:want/reow.bin;$(hexdump-it)
+    want/reow.hex:\
+      want/reow.bin\
+      ;$(hexdump-it)
 
-      want/reow.bin:reow.o|@dir/want;$(link-it)
+      want/reow.bin:\
+        reow.o\
+        |@dir/want\
+        ;$(link-it)
 
-        reow.o:reow.c;$(compile-it)
+        reow.o:compile-flags:=
+        reow.o:\
+          reow.c\
+          ;$(compile-it)
 
-    have/reow.hex:have/reow.bin;$(hexdump-it)
+    have/reow.hex:\
+      have/reow.bin\
+      ;$(hexdump-it)
 
-      have/reow.bin:nb|@dir/have;$(nb-it)
+      have/reow.bin:\
+        nb\
+        |@dir/have\
+        ;$(nb)
 
+
+# Special Rules
+################################################################
+
+# A force target, allowing phony pattern rules.
 @phony:;
 
+# Marks all @-prefixed targets as phony.
+@%:@phony
+
+# Allows depending on whether a directory exists.
 @dir/%:@phony;[[ -d $(stem) ]] || mkdir $(stem)
 
+# Marks all makefiles as not needing to be rebuilt.
 $(MAKEFILE_LIST)::;
