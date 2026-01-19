@@ -1,0 +1,6 @@
+Try to decide on naming conventions.
+Use offsets instead of pointers.
+Add a buffer type with some bounds checking.
+Systematically put offsets in variables.
+Start trying to figure out a way to make more than one pass.
+Clean up the Makefile a bit.
