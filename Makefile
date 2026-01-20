@@ -109,6 +109,8 @@ compile-flags:=\
   -Wextra\
   -Wpedantic\
   \
+  -Werror=return-type\
+  \
   -Wno-overlength-strings\
   \
   -std=c23
