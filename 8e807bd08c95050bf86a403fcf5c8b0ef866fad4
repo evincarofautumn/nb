@@ -1,4 +1,5 @@
-Got a hello world executable outputting with no differences
+Got a hello world executable outputting with no differences!
 
-Adding -O1 makes some differences show up
-because the test is compiled with the same flags as the compiler
+Adding -O1 makes some differences show up,
+because the test is compiled
+with the same flags as the compiler.
