@@ -1,0 +1,4 @@
+Define types more systematically.
+Add bit vector functions and tests for them.
+Clean up assertions a bit.
+Add multi-pass structure and start testing it.
