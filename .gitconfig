@@ -1,0 +1,18 @@
+# git config --local --add include.path ../.gitconfig
+# git config set --local --append include.path ../.gitconfig
+
+[notes]
+
+  rewriteRef = refs/notes/commits
+
+[remote "origin"]
+
+  url    = git@github.com:evincarofautumn/nb.git
+
+  fetch  = +refs/heads/*:refs/remotes/origin/*
+  fetch  = refs/notes/*:refs/notes/*
+  fetch  = refs/tags/*:refs/tags/*
+
+  push   = refs/heads/*:refs/heads/*
+  push   = refs/notes/*:refs/notes/*
+  push   = refs/tags/*:refs/tags/*
