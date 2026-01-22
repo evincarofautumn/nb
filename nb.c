@@ -788,316 +788,369 @@ Bool work(TaskVarRef task) {
 
         // TODO: on set load_commands_end: assert: sizeofcmds  = load_commands_end - load_commands_beg
 
-        task_beg_elt(task, "load_commands");
+        task_beg_elt(task, "load_commands"); {
 
-        task_beg_elt(task, "segment_command_64"); {
+          task_beg_elt(task, "segment_command_64"); {
 
-          task_elt(  task, "cmd"       );  task_out_u32(    task, shall_be_same(u32(0x00000019),
-                                                                                U32(LC_SEGMENT_64))  );
-          task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000048)                  );
-          task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__PAGEZERO"}   );
-          task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000000'00000000)         );
-          task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000001'00000000)         );
-          task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00000000)         );
-          task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00000000)         );
-          task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000000)                  );
-          task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000000)                  );
-          task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000000)                  );
-          task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                  );
+            task_elt(  task, "cmd"       );  task_out_u32(    task, shall_be_same(u32(0x00000019),
+                                                                                  U32(LC_SEGMENT_64))  );
+            task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000048)                  );
+            task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__PAGEZERO"}   );
+            task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000000'00000000)         );
+            task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000001'00000000)         );
+            task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00000000)         );
+            task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00000000)         );
+            task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000000)                  );
+            task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000000)                  );
+            task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000000)                  );
+            task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                  );
 
-        } task_end_elt(task, "segment_command_64");
+          } task_end_elt(task, "segment_command_64");
 
-        // command 2
-        task_beg_elt(task, "segment_command_64"); {
+          // command 2
+          task_beg_elt(task, "segment_command_64"); {
 
-          task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
-          task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000188)                                    );
-          task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}                         );
-          task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00000000)                           );
-          task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00000000)                           );
-          task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000005)                                    );
-          task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000005)                                    );
-          task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000004)                                    );
-          task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                                    );
+            task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
+            task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000188)                                    );
+            task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}                         );
+            task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00000000)                           );
+            task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
+            task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00000000)                           );
+            task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
+            task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000005)                                    );
+            task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000005)                                    );
+            task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000004)                                    );
+            task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                                    );
 
-          task_beg_elt(task, "section_64"); {
+            task_beg_elt(task, "section_64"); {
 
-            task_elt(  task, "sectname"  );  task_out_v16u8(  task, (V16U8){.str = u8"__text"}  );
-            task_elt(  task, "segname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}  );
-            task_elt(  task, "addr"      );  task_out_u64(    task, u64(0x00000001'00000460)    );
-            task_elt(  task, "size"      );  task_out_u64(    task, u64(0x00000000'0000003c)    );
-            task_elt(  task, "offset"    );  task_out_u32(    task, u32(0x00000460)             );
-            task_elt(  task, "align"     );  task_out_u32(    task, u32(0x00000002)             );
-            task_elt(  task, "reloff"    );  task_out_u32(    task, u32(0x00000000)             );
-            task_elt(  task, "nreloc"    );  task_out_u32(    task, u32(0x00000000)             );
-            task_elt(  task, "flags"     );  task_out_u32(    task, shall_be_same(u32(0x80000400),
-                                                                                  ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
-                                                                                    & shall_be_same(u32(0x00000000), U32(S_REGULAR))
-                                                                                    )
-                                                                                  | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
-                                                                                    & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
-                                                                                      | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+              task_elt(  task, "sectname"  );  task_out_v16u8(  task, (V16U8){.str = u8"__text"}  );
+              task_elt(  task, "segname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}  );
+              task_elt(  task, "addr"      );  task_out_u64(    task, u64(0x00000001'00000460)    );
+              task_elt(  task, "size"      );  task_out_u64(    task, u64(0x00000000'0000003c)    );
+              task_elt(  task, "offset"    );  task_out_u32(    task, u32(0x00000460)             );
+              task_elt(  task, "align"     );  task_out_u32(    task, u32(0x00000002)             );
+              task_elt(  task, "reloff"    );  task_out_u32(    task, u32(0x00000000)             );
+              task_elt(  task, "nreloc"    );  task_out_u32(    task, u32(0x00000000)             );
+              task_elt(  task, "flags"     );  task_out_u32(    task, shall_be_same(u32(0x80000400),
+                                                                                    ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
+                                                                                      & shall_be_same(u32(0x00000000), U32(S_REGULAR))
+                                                                                      )
+                                                                                    | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
+                                                                                      & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
+                                                                                        | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+                                                                                        )
                                                                                       )
                                                                                     )
-                                                                                  )
-                                                                                 ));
-            task_elt(task, "reserved1"); task_out_u32(task, u32(0x00000000));
-            task_elt(task, "reserved2"); task_out_u32(task, u32(0x00000000));
-            task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
+                                                                                   ));
+              task_elt(task, "reserved1"); task_out_u32(task, u32(0x00000000));
+              task_elt(task, "reserved2"); task_out_u32(task, u32(0x00000000));
+              task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
 
-          } task_end_elt(task, "section_64");
+            } task_end_elt(task, "section_64");
 
-          task_beg_elt(task, "section_64"); {
+            task_beg_elt(task, "section_64"); {
 
-            task_elt(task, "sectname"); task_out_v16u8(task, (V16U8){.str = u8"__stubs"});
-            task_elt(task, "segname"); task_out_v16u8(task, (V16U8){.str = u8"__TEXT"});
-            task_elt(task, "addr"); task_out_u64(task, u64(0x00000001'0000049c));
-            task_elt(task, "size"); task_out_u64(task, u64(0x00000000'0000000c));
-            task_elt(task, "offset"); task_out_u32(task, u32(0x0000049c));
-            task_elt(task, "align"); task_out_u32(task, u32(0x00000002));
-            task_elt(task, "reloff"); task_out_u32(task, u32(0x00000000));
-            task_elt(task, "nreloc"); task_out_u32(task, u32(0x00000000));
-            task_elt(task, "flags"); task_out_u32(task, shall_be_same(
-                                                          u32(0x80000408),
-                                                          ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
-                                                            & shall_be_same(u32(0x00000008), U32(S_SYMBOL_STUBS))
-                                                            )
-                                                          | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
-                                                            & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
-                                                              | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+              task_elt(task, "sectname"); task_out_v16u8(task, (V16U8){.str = u8"__stubs"});
+              task_elt(task, "segname"); task_out_v16u8(task, (V16U8){.str = u8"__TEXT"});
+              task_elt(task, "addr"); task_out_u64(task, u64(0x00000001'0000049c));
+              task_elt(task, "size"); task_out_u64(task, u64(0x00000000'0000000c));
+              task_elt(task, "offset"); task_out_u32(task, u32(0x0000049c));
+              task_elt(task, "align"); task_out_u32(task, u32(0x00000002));
+              task_elt(task, "reloff"); task_out_u32(task, u32(0x00000000));
+              task_elt(task, "nreloc"); task_out_u32(task, u32(0x00000000));
+              task_elt(task, "flags"); task_out_u32(task, shall_be_same(
+                                                            u32(0x80000408),
+                                                            ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
+                                                              & shall_be_same(u32(0x00000008), U32(S_SYMBOL_STUBS))
+                                                              )
+                                                            | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
+                                                              & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
+                                                                | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+                                                                )
                                                               )
                                                             )
-                                                          )
-                                                        ));
-            task_elt(task, "reserved1"); task_out_u32(task, u32(0x00000000));
-            task_elt(task, "reserved2"); task_elt(task, "stub_size"); task_out_u32(task, u32(0x0000000c));
-            task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
+                                                          ));
+              task_elt(task, "reserved1"); task_elt(task, "index_into_indirect_symbol_table"); task_out_u32(task, u32(0x00000000));
+              task_elt(task, "reserved2"); task_elt(task, "stub_size"); task_out_u32(task, u32(0x0000000c));
+              task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
 
-          } task_end_elt(task, "section_64");
+            } task_end_elt(task, "section_64");
 
-          task_beg_elt(task, "section_64"); {
+            task_beg_elt(task, "section_64"); {
 
-            task_elt(task, "sectname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__cstring"}                           );
-            task_elt(task, "segname"    );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}                              );
-            task_elt(task, "addr"       );  task_out_u64(    task, u64(0x00000001'000004a8)                                );
-            task_elt(task, "size"       );  task_out_u64(    task, u64(0x00000000'00000005)                                );
-            task_elt(task, "offset"     );  task_out_u32(    task, u32(0x000004a8)                                         );
-            task_elt(task, "align"      );  task_out_u32(    task, u32(0x00000000)                                         );
-            task_elt(task, "reloff"     );  task_out_u32(    task, u32(0x00000000)                                         );
-            task_elt(task, "nreloc"     );  task_out_u32(    task, u32(0x00000000)                                         );
-            task_elt(task, "flags"      );  task_out_u32(    task, shall_be_same(u32(0x00000002), U32(S_CSTRING_LITERALS))  );
-            task_elt(task, "reserved1"  );  task_out_u32(    task, u32(0x00000000)                                         );
-            task_elt(task, "reserved2"  );  task_out_u32(    task, u32(0x00000000)                                         );
-            task_elt(task, "reserved3"  );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "sectname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__cstring"}                           );
+              task_elt(task, "segname"    );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}                              );
+              task_elt(task, "addr"       );  task_out_u64(    task, u64(0x00000001'000004a8)                                );
+              task_elt(task, "size"       );  task_out_u64(    task, u64(0x00000000'00000005)                                );
+              task_elt(task, "offset"     );  task_out_u32(    task, shall_be_same(u32(0x000004a8), U32(1192))               );
+              task_elt(task, "align"      );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "reloff"     );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "nreloc"     );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "flags"      );  task_out_u32(    task, shall_be_same(u32(0x00000002), U32(S_CSTRING_LITERALS)) );
+              task_elt(task, "reserved1"  );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "reserved2"  );  task_out_u32(    task, u32(0x00000000)                                         );
+              task_elt(task, "reserved3"  );  task_out_u32(    task, u32(0x00000000)                                         );
 
-          } task_end_elt(task, "section_64");
+            } task_end_elt(task, "section_64");
 
-          task_beg_elt(task, "section_64"); {
+            task_beg_elt(task, "section_64"); {
 
-            task_elt(task, "sectname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__unwind_info"}  );
-            task_elt(task, "segname"    );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}         );
-            task_elt(task, "addr"       );  task_out_u64(    task,  u64(0x00000001'000004b0)           );
-            task_elt(task, "size"       );  task_out_u64(    task,  u64(0x00000000'00000058)           );
-            task_elt(task, "offset"     );  task_out_u32(    task,  u32(0x000004b0)                    );
-            task_elt(task, "align"      );  task_out_u32(    task,  u32(0x00000002)                    );
-            task_elt(task, "reloff"     );  task_out_u32(    task,  u32(0x00000000)                    );
-            task_elt(task, "nreloc"     );  task_out_u32(    task,  u32(0x00000000)                    );
-            task_elt(task, "flags"      );  task_out_u32(    task,  u32(0x00000000)                    );
-            task_elt(task, "reserved1"  );  task_out_u32(    task,  u32(0x00000000)                    );
-            task_elt(task, "reserved2"  );  task_out_u32(    task,  u32(0x00000000)                    );
-            task_elt(task, "reserved3"  );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "sectname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__unwind_info"}  );
+              task_elt(task, "segname"    );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}         );
+              task_elt(task, "addr"       );  task_out_u64(    task,  u64(0x00000001'000004b0)           );
+              task_elt(task, "size"       );  task_out_u64(    task,  u64(0x00000000'00000058)           );
+              task_elt(task, "offset"     );  task_out_u32(    task,  u32(0x000004b0)                    );
+              task_elt(task, "align"      );  task_out_u32(    task,  u32(0x00000002)                    );
+              task_elt(task, "reloff"     );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "nreloc"     );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "flags"      );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "reserved1"  );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "reserved2"  );  task_out_u32(    task,  u32(0x00000000)                    );
+              task_elt(task, "reserved3"  );  task_out_u32(    task,  u32(0x00000000)                    );
 
-          } task_end_elt(task, "section_64");
+            } task_end_elt(task, "section_64");
 
-        } task_end_elt(task, "segment_command_64");
+          } task_end_elt(task, "segment_command_64");
 
-        // command 3
-        task_beg_elt(task, "segment_command_64"); {
+          // command 3
+          task_beg_elt(task, "segment_command_64"); {
 
-          task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
-          task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000098)                                    );
-          task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}                   );
-          task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00004000)                           );
-          task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000003)                                    );
-          task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000003)                                    );
-          task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000001)                                    );
-          task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000010)                                    );
+            task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
+            task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000098)                                     );
+            task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}                    );
+            task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00004000)                            );
+            task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                            );
+            task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00004000)                            );
+            task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00004000)                            );
+            task_elt(  task, "maxprot"   );  task_out_u32(    task,  shall_be_same(u32(0x00000003),
+                                                                                   ( U32(VM_PROT_READ)
+                                                                                   | U32(VM_PROT_WRITE)
+                                                                                   )));
+            task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000003)                                     );
+            task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000001)                                     );
+            task_elt(  task, "flags"     );  task_out_u32(    task,  shall_be_same(u32(0x00000010),
+                                                                                   U32(SG_READ_ONLY)));
 
-          task_beg_elt(task, "section_64"); {
+            task_beg_elt(task, "section_64"); {
 
-            task_elt(task, "sectname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__got"}         );
-            task_elt(task, "segname"    );  task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}  );
-            task_elt(task, "addr"       );  task_out_u64(    task,  u64(0x00000001'00004000)          );
-            task_elt(task, "size"       );  task_out_u64(    task,  u64(0x00000000'00000008)          );
-            task_elt(task, "offset"     );  task_out_u32(    task,  u32(0x00004000)                   );
-            task_elt(task, "align"      );  task_out_u32(    task,  u32(0x00000003)                   );
-            task_elt(task, "reloff"     );  task_out_u32(    task,  u32(0x00000000)                   );
-            task_elt(task, "nreloc"     );  task_out_u32(    task,  u32(0x00000000)                   );
-            task_elt(task, "flags"      );  task_out_u32(    task,  u32(0x00000006)                   );
-            task_elt(task, "reserved1"  );  task_out_u32(    task,  u32(0x00000001)                   );
-            task_elt(task, "reserved2"  );  task_out_u32(    task,  u32(0x00000000)                   );
-            task_elt(task, "reserved3"  );  task_out_u32(    task,  u32(0x00000000)                   );
+              task_elt(task, "sectname"   );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__got"}         );
+              task_elt(task, "segname"    );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}  );
+              task_elt(task, "addr"       );                                                        task_out_u64(    task,  u64(0x00000001'00004000)          );
+              task_elt(task, "size"       );                                                        task_out_u64(    task,  u64(0x00000000'00000008)          );
+              task_elt(task, "offset"     );                                                        task_out_u32(    task,  u32(0x00004000)                   );
+              task_elt(task, "align"      );                                                        task_out_u32(    task,  u32(0x00000003)                   );
+              task_elt(task, "reloff"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+              task_elt(task, "nreloc"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+              task_elt(task, "flags"      );                                                        task_out_u32(    task,  shall_be_same(u32(0x00000006),
+                                                                                                                                          U32(S_NON_LAZY_SYMBOL_POINTERS)));
+              task_elt(task, "reserved1"  );  task_elt(task, "index_into_indirect_symbol_table");   task_out_u32(    task,  u32(0x00000001)                   );
+              task_elt(task, "reserved2"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+              task_elt(task, "reserved3"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
 
-          } task_end_elt(task, "section_64");
+            } task_end_elt(task, "section_64");
 
-        } task_end_elt(task, "segment_command_64");
+          } task_end_elt(task, "segment_command_64");
 
-        task_beg_elt(task, "segment_command_64"); {
+          task_beg_elt(task, "segment_command_64"); {
 
-          task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
-          task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000048)                                    );
-          task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__LINKEDIT"}                     );
-          task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00008000)                           );
-          task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
-          task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00008000)                           );
-          task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00000298)                           );
-          task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000001)                                    );
-          task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000001)                                    );
-          task_elt(  task, "nsects"    );  task_out_u64(    task,  u64(0x00000000)                                    );
-          task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x80000034)                                    );
+            task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
+            task_elt(  task, "cmdsize"   );  task_out_u32(    task,  u32(0x00000048)                                    );
+            task_elt(  task, "segname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__LINKEDIT"}                     );
+            task_elt(  task, "vmaddr"    );  task_out_u64(    task,  u64(0x00000001'00008000)                           );
+            task_elt(  task, "vmsize"    );  task_out_u64(    task,  u64(0x00000000'00004000)                           );
+            task_elt(  task, "fileoff"   );  task_out_u64(    task,  u64(0x00000000'00008000)                           );
+            task_elt(  task, "filesize"  );  task_out_u64(    task,  u64(0x00000000'00000298)                           );
+            task_elt(  task, "maxprot"   );  task_out_u32(    task,  u32(0x00000001)                                    );
+            task_elt(  task, "initprot"  );  task_out_u32(    task,  u32(0x00000001)                                    );
+            task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000000)                                    );
+            task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                                    );
 
-        } task_end_elt(task, "segment_command_64");
+          } task_end_elt(task, "segment_command_64");
 
-        task_beg_elt(task, "prebound_dylib_command"); {
+          task_beg_elt(task, "linkedit_data_command"); {
 
-          task_elt(  task,  "cmd"             );  task_out_u32(  task,  shall_be_same(u32(0x00000010), U32(LC_PREBOUND_DYLIB))  );
-          task_elt(  task,  "cmdsize"         );  task_out_u32(  task,  u32(0x00008000)                                        );
-          task_elt(  task,  "name"            );  task_out_u32(  task,  u32(0x00000060)                                        );
-          task_elt(  task,  "nmodules"        );  task_out_u32(  task,  u32(0x80000033)                                        );
-          task_elt(  task,  "linked_modules"  );  task_out_u32(  task,  u32(0x00000010)                                        );
+            task_elt(  task,  "cmd"             );  task_out_u32(  task,  shall_be_same(  u32(0x80000034),
+                                                                                          ( U32(0x34)
+                                                                                          | U32(LC_REQ_DYLD)
+                                                                                          )));
+            task_elt(  task,  "cmdsize"         );  task_out_u32(  task,  u32(0x00000010));
+            task_elt(  task,  "dataoff"         );  task_out_u32(  task,  u32(0x00008000));
+            task_elt(  task,  "datasize"        );  task_out_u32(  task,  u32(0x00000060));
 
-        } task_end_elt(task, "prebound_dylib_command");
+          } task_end_elt(task, "linkedit_data_command");
 
-        task_end_elt(task, "load_commands");
+          task_beg_elt(task, "linkedit_data_command"); {
+            // LC_DYLD_EXPORTS_TRIE
+            task_out_u32(task, u32(0x80000033));
+            task_out_u32(task, u32(0x00000010));
+            task_out_u32(task, u32(0x00008060));
+            task_out_u32(task, u32(0x00000030));
+          } task_end_elt(task, "linkedit_data_command");
+
+          task_beg_elt(task, "symtab_command"); {
+            // LC_SYMTAB
+            task_out_u32(task, u32(0x00000002));
+            task_out_u32(task, u32(0x00000018));
+            task_out_u32(task, u32(0x00008098));
+            task_out_u32(task, u32(0x00000003));
+            task_out_u32(task, u32(0x000080d0));
+            task_out_u32(task, u32(0x00000028));
+          } task_end_elt(task, "symtab_command");
+
+          task_beg_elt(task, "dysymtab_command"); {
+            // LC_DYSYMTAB
+            task_out_u32(task, u32(0x0000000b));
+            task_out_u32(task, u32(0x00000050));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000002));
+            task_out_u32(task, u32(0x00000002));
+            task_out_u32(task, u32(0x00000001));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x000080c8));
+            task_out_u32(task, u32(0x00000002));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "dysymtab_command");
+
+          task_beg_elt(task, "dylinker_command"); {
+            // LC_LOAD_DYLINKER
+            task_out_u32(task, u32(0x0000000e));
+            task_out_u32(task, u32(0x00000020));
+            task_out_u32(task, u32(0x0000000c));
+            // "/usr/lib/dyld"
+            task_out_u32(task, u32(0x7273752f));
+            task_out_u32(task, u32(0x62696c2f));
+            task_out_u32(task, u32(0x6c79642f));
+            task_out_u32(task, u32(0x00000064));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "dylinker_command");
+
+          task_beg_elt(task, "uuid_command"); {
+            // LC_UUID
+            task_out_u32(task, u32(0x0000001b));
+            task_out_u32(task, u32(0x00000018));
+            task_out_u32(task, u32(0xfd260cec));
+            task_out_u32(task, u32(0x253118de));
+            task_out_u32(task, u32(0x528214bb));
+            task_out_u32(task, u32(0xd9594302));
+          } task_end_elt(task, "uuid_command");
+
+          task_beg_elt(task, "build_version_command"); {
+            // LC_BUILD_VERSION
+            task_out_u32(task, u32(0x00000032));
+            task_out_u32(task, u32(0x00000020));
+            task_out_u32(task, u32(0x00000001));
+            task_out_u32(task, u32(0x000f0000));
+            task_out_u32(task, u32(0x000f0500));
+            task_out_u32(task, u32(0x00000001));
+            task_out_u32(task, u32(0x00000003));
+            task_out_u32(task, u32(0x048f0500));
+          } task_end_elt(task, "build_version_command");
+
+          task_beg_elt(task, "source_version_command"); {
+            // LC_SOURCE_VERSION
+            task_out_u32(task, u32(0x0000002a));
+            task_out_u32(task, u32(0x00000010));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "source_version_command");
+
+          task_beg_elt(task, "entry_point_command"); {
+            // LC_MAIN
+            task_out_u32(task, u32(0x80000028));
+            task_out_u32(task, u32(0x00000018));
+            task_out_u32(task, u32(0x00000460));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "entry_point_command");
+
+          task_beg_elt(task, "dylib_use_command"); {
+            // LC_LOAD_DYLIB
+            task_out_u32(task, u32(0x0000000c));
+            task_out_u32(task, u32(0x00000038));
+            task_out_u32(task, u32(0x00000018));
+            task_out_u32(task, u32(0x00000002));
+            task_out_u32(task, u32(0x05470000));
+            task_out_u32(task, u32(0x00010000));
+            // "/usr/lib/libSystem.B.dylib"
+            task_out_u32(task, u32(0x7273752f));
+            task_out_u32(task, u32(0x62696c2f));
+            task_out_u32(task, u32(0x62696c2f));
+            task_out_u32(task, u32(0x74737953));
+            task_out_u32(task, u32(0x422e6d65));
+            task_out_u32(task, u32(0x6c79642e));
+            task_out_u32(task, u32(0x00006269));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "dylib_use_command");
+
+          task_beg_elt(task, "linkedit_data_command"); {
+            // LC_FUNCTION_STARTS
+            task_out_u32(task, u32(0x00000026));
+            task_out_u32(task, u32(0x00000010));
+            task_out_u32(task, u32(0x00008090));
+            task_out_u32(task, u32(0x00000008));
+          } task_end_elt(task, "linkedit_data_command");
+
+          task_beg_elt(task, "linkedit_data_command"); {
+            // LC_DATA_IN_CODE
+            task_out_u32(task, u32(0x00000029));
+            task_out_u32(task, u32(0x00000010));
+            task_out_u32(task, u32(0x00008098));
+            task_out_u32(task, u32(0x00000000));
+          } task_end_elt(task, "linkedit_data_command");
+
+          task_beg_elt(task, "linkedit_data_command"); {
+            // LC_CODE_SIGNATURE
+            task_out_u32(task, u32(0x0000001d));
+            task_out_u32(task, u32(0x00000010));
+            task_out_u32(task, u32(0x00008100));
+            task_out_u32(task, u32(0x00000198));
+          } task_end_elt(task, "linkedit_data_command");
+
+          {
+            // padding
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+            task_out_u32(task, u32(0x00000000));
+          }
+
+        } task_end_elt(task, "load_commands");
 
         {
+          // __TEXT,__text._main
+          task_out_u32(task, u32(0xd100c3ff));  //  sub sp, sp, #0x30
+          task_out_u32(task, u32(0xa9027bfd));  //  stp x29, x30, [sp, #0x20]
+          task_out_u32(task, u32(0x910083fd));  //  add x29, sp, #0x20
+          task_out_u32(task, u32(0x52800008));  //  mov w8, #0x0
+          task_out_u32(task, u32(0xb9000fe8));  //  str w8, [sp, #0xc]
+          task_out_u32(task, u32(0xb81fc3bf));  //  stur wzr, [x29, #-0x4]
+          task_out_u32(task, u32(0xb81f83a0));  //  stur w0, [x29, #-0x8]
+          task_out_u32(task, u32(0xf9000be1));  //  str x1, [sp, #0x10]
+          task_out_u32(task, u32(0x90000000));  //  adrp x0, 0; 0x10000000
+          task_out_u32(task, u32(0x9112a000));  //  add x0, x0, #0x4a8 ; "reow"
+          task_out_u32(task, u32(0x94000005));  //  bl 0x10000049c ; _puts
+          task_out_u32(task, u32(0xb9400fe0));  //  ldr w0, [sp, #0xc]
+          task_out_u32(task, u32(0xa9427bfd));  //  ldp x29, x30, [sp, #0x20]
+          task_out_u32(task, u32(0x9100c3ff));  //  add sp, sp, #0x30
+          task_out_u32(task, u32(0xd65f03c0));  //  ret
 
-          task_out_u32(task, u32(0x00008060));
-          task_out_u32(task, u32(0x00000030));
-          task_out_u32(task, u32(0x00000002));
-          task_out_u32(task, u32(0x00000018));
-
-          task_out_u32(task, u32(0x00008098));
-          task_out_u32(task, u32(0x00000003));
-
-          task_out_u32(task, u32(0x000080d0));
-          task_out_u32(task, u32(0x00000028));
-          task_out_u32(task, u32(0x0000000b));
-          task_out_u32(task, u32(0x00000050));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000002));
-          task_out_u32(task, u32(0x00000002));
-          task_out_u32(task, u32(0x00000001));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-
-          task_out_u32(task, u32(0x000080c8));
-          task_out_u32(task, u32(0x00000002));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x0000000e));
-          task_out_u32(task, u32(0x00000020));
-          task_out_u32(task, u32(0x0000000c));
-
-          // "/usr/lib/dyld"
-          task_out_u32(task, u32(0x7273752f));
-          task_out_u32(task, u32(0x62696c2f));
-          task_out_u32(task, u32(0x6c79642f));
-
-          task_out_u32(task, u32(0x00000064));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x0000001b));
-          task_out_u32(task, u32(0x00000018));
-
-          task_out_u32(task, u32(0xfd260cec));
-          task_out_u32(task, u32(0x253118de));
-          task_out_u32(task, u32(0x528214bb));
-          task_out_u32(task, u32(0xd9594302));
-          task_out_u32(task, u32(0x00000032));
-          task_out_u32(task, u32(0x00000020));
-          task_out_u32(task, u32(0x00000001));
-          task_out_u32(task, u32(0x000f0000));
-          task_out_u32(task, u32(0x000f0500));
-          task_out_u32(task, u32(0x00000001));
-          task_out_u32(task, u32(0x00000003));
-          task_out_u32(task, u32(0x048f0500));
-          task_out_u32(task, u32(0x0000002a));
-          task_out_u32(task, u32(0x00000010));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x80000028));
-
-          task_out_u32(task, u32(0x00000018));
-          task_out_u32(task, u32(0x00000460));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x0000000c));
-          task_out_u32(task, u32(0x00000038));
-          task_out_u32(task, u32(0x00000018));
-          task_out_u32(task, u32(0x00000002));
-          task_out_u32(task, u32(0x05470000));
-          task_out_u32(task, u32(0x00010000));
-
-          // "/usr/lib/libSystem.B.dylib"
-          task_out_u32(task, u32(0x7273752f));
-          task_out_u32(task, u32(0x62696c2f));
-          task_out_u32(task, u32(0x62696c2f));
-          task_out_u32(task, u32(0x74737953));
-          task_out_u32(task, u32(0x422e6d65));
-          task_out_u32(task, u32(0x6c79642e));
-          task_out_u32(task, u32(0x00006269));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000026));
-          task_out_u32(task, u32(0x00000010));
-
-          task_out_u32(task, u32(0x00008090));
-          task_out_u32(task, u32(0x00000008));
-          task_out_u32(task, u32(0x00000029));
-          task_out_u32(task, u32(0x00000010));
-
-          task_out_u32(task, u32(0x00008098));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x0000001d));
-          task_out_u32(task, u32(0x00000010));
-          task_out_u32(task, u32(0x00008100));
-          task_out_u32(task, u32(0x00000198));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0x00000000));
-          task_out_u32(task, u32(0xd100c3ff));
-          task_out_u32(task, u32(0xa9027bfd));
-          task_out_u32(task, u32(0x910083fd));
-          task_out_u32(task, u32(0x52800008));
-          task_out_u32(task, u32(0xb9000fe8));
-          task_out_u32(task, u32(0xb81fc3bf));
-          task_out_u32(task, u32(0xb81f83a0));
-          task_out_u32(task, u32(0xf9000be1));
-          task_out_u32(task, u32(0x90000000));
-          task_out_u32(task, u32(0x9112a000));
-          task_out_u32(task, u32(0x94000005));
-          task_out_u32(task, u32(0xb9400fe0));
-          task_out_u32(task, u32(0xa9427bfd));
-          task_out_u32(task, u32(0x9100c3ff));
-          task_out_u32(task, u32(0xd65f03c0));
+          // ?
           task_out_u32(task, u32(0x90000030));
           task_out_u32(task, u32(0xf9400210));
           task_out_u32(task, u32(0xd61f0200));
@@ -1115,6 +1168,8 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000460));
           task_out_u32(task, u32(0x00000040));
           task_out_u32(task, u32(0x00000040));
+
+          // _puts
           task_out_u32(task, u32(0x0000049c));
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x00000040));
