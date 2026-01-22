@@ -109,8 +109,10 @@ compile-flags:=\
   -Wextra\
   -Wpedantic\
   \
+  -Werror=format\
   -Werror=return-type\
   \
+  -Wno-extra-semi\
   -Wno-overlength-strings\
   \
   -std=c23
