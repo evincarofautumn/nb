@@ -1,0 +1,2 @@
+Moving more things into the common task structure.
+Added some environment isolation in the Makefile.
