@@ -34,7 +34,12 @@ MAKEFLAGS+=\
   --warn-undefined-variables
 
 # Use Bash, not sh.
-SHELL:=/bin/bash
+# Try to start in an empty environment.
+SHELL=$(ENV)
+.SHELLFLAGS=\
+  $(env-flags)\
+  $(shell)\
+  $(shell-flags)
 
 # The default goal isn't necessarily the first in the file.
 .DEFAULT_GOAL:=@default
@@ -45,12 +50,29 @@ SHELL:=/bin/bash
 # Don't require tab characters.
 .RECIPEPREFIX:=;
 
-# Bash flags.
-.SHELLFLAGS:=\
+
+# Shell
+################################################################
+
+shell=$(BASH)
+
+shell-env=\
+  PATH
+
+shell-flags=$(bash-flags)
+
+bash-flags=\
+  --noprofile\
+  --norc\
   -O nullglob\
   -o errexit\
   -o pipefail\
   -c
+
+env-flags=\
+  -i\
+  $(if $(false),-v)\
+  $(foreach v,$(shell-env),$v=$(call quote.1,$(value $v)))
 
 
 # Make Directives
@@ -144,14 +166,9 @@ defined.1=$\
 # Commands
 ################################################################
 
+BASH:=/bin/bash
+
 CC:=cc
-
-ECHO:=$\
-  printf '%s' --
-
-# HD=hexdump $(hexdump-flags)
-
-HD=xxd $(xxd-flags)
 
 DIFF=$\
   $(call space.2,$\
@@ -162,6 +179,15 @@ DIFF=$\
 #   $(call space.2,$\
 #     git diff $(git-diff-flags),$\
 #     $(call get.2,DIFFFLAGS,$(null)))
+
+ECHO:=$\
+  printf '%s' --
+
+ENV:=/usr/bin/env
+
+# HD=hexdump $(hexdump-flags)
+
+HD=xxd $(xxd-flags)
 
 LINK=$\
   $(call space.2,$\
@@ -210,8 +236,8 @@ compile-flags=\
   compile-language-flags=\
     -std=c23
 
-  compile-profile-flags=\
-    -g
+  # TODO: `-fsanitize=undefined`
+  compile-profile-flags=
 
   compile-warning-flags=\
     $(compile-warning-enabled-flags)\
@@ -309,35 +335,35 @@ compile-it=\
   $(call space.2,$\
     $(CC)\
       $(compile-flags)\
-      -c $(first-prerequisite)\
-      -o $(target),$\
+      -c $(call quote.1,$(first-prerequisite))\
+      -o $(call quote.1,$(target)),$\
     $(call get.2,CFLAGS,$(null)))
 
 diff-them=\
   $(DIFF)\
-    $(first-prerequisite)\
+    $(call quote.1,$(first-prerequisite))\
     $(second-prerequisite)
 
 hexdump-it=\
   $(call space.2,$\
     $(HD)\
-      $(first-prerequisite)\
-      >$(target),$\
+      $(call quote.1,$(first-prerequisite))\
+      >$(call quote.1,$(target)),$\
     $(call get.2,HDFLAGS,$(null)))
 
 link-them=\
   $(LINK)\
-    $(prerequisite-bag)\
-    -o $(target)
+    $(foreach p,$(prerequisite-bag),$(call quote.1,$p))\
+    -o $(call quote.1,$(target))
 
 nb=\
-  $(NB) $(target)
+  $(NB) $(call quote.1,$(target))
 
 otool-it=\
   $(call space.2,$\
     $(OTOOL)\
-      $(first-prerequisite)\
-      >$(target),$\
+      $(call quote.1,$(first-prerequisite))\
+      >$(call quote.1,$(target)),$\
     $(call get.2,OTOOLFLAGS,$(null)))
 
 
@@ -401,7 +427,7 @@ otool-it=\
       @test/reow/otool:\
         DIFFFLAGS=\
           --ignore-matching-lines=$\
-            $(call quote.1,^(want|have)/reow\.bin:$)
+            $(call quote.1,^(want|have)/reow\.bin:$$)
       @test/reow/otool:\
         want/reow.otool\
         have/reow.otool\

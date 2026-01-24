@@ -64,6 +64,9 @@ static_assert(sizeof(size_t) == 8);
 #define when(a, b)                                              \
   (not (a) or (b))
 
+#define after(former, latter)                                   \
+  ((former) ? ((latter), true) : ((latter), false))
+
 
 //  Systematic names for types
 ////////////////////////////////////////////////////////////////
@@ -83,6 +86,12 @@ typedef name *name##RefVar;                                     \
 typedef name##RefVar const name##Ref;                           \
 typedef name##Var *name##VarRefVar;                             \
 typedef name##VarRefVar const name##VarRef
+
+#define enum_type(name, ...)                                    \
+  enum name##Id { __VA_ARGS__ };                                \
+  new_type(enum, name##Id);                                     \
+  new_type(struct, name);                                       \
+  struct name { name##IdVar id; }
 
 #define struct_type(name)                                       \
   new_type(struct, name)
@@ -108,10 +117,11 @@ type_alias(Chr, char);
 [[maybe_unused]]
 static Chr NUL = '\0';
 
-type_alias(Arg,   ChrRefVar);
-type_alias(Args,  ArgRefVar);
-type_alias(Str,   ChrRefVar);
-type_alias(Tag,   ChrRefVar);
+type_alias(Arg,       ChrRefVar);
+type_alias(Args,      ArgRefVar);
+type_alias(FilePath,  ChrRefVar);
+type_alias(Str,       ChrRefVar);
+type_alias(Tag,       ChrRefVar);
 
 //  Number of elements, length, cardinality.
 type_alias(Num, size_t);
@@ -131,6 +141,23 @@ type_alias(Stride, size_t);
 type_alias(Align, size_t);
 
 type_alias(Bool, bool);
+
+//  Says how much room is left in `this`.
+static inline Size
+size_room(
+  Size this
+) {
+  return SIZE_MAX - this;
+}
+
+//  Says whether `this` has `that` many bytes of room.
+static inline Size
+size_has(
+  Size this,
+  Size that
+) {
+  return that <= size_room(this);
+}
 
 
 //  Sized types
@@ -196,6 +223,12 @@ type_alias(Line, typeof(__LINE__));
 #define drop_1(...)                                             \
   __VA_OPT__(tail(__VA_ARGS__))
 
+#define comma_tail(x, ...)                                      \
+  __VA_OPT__(,) __VA_ARGS__
+
+#define comma_drop_1(...)                                       \
+  __VA_OPT__(comma_tail(__VA_ARGS__))
+
 #define tell(fmt, file, line, fun, tag, ...)                    \
   (void)fprintf(                                                \
     stderr,                                                     \
@@ -223,8 +256,7 @@ type_alias(Line, typeof(__LINE__));
     __LINE__,                                                   \
     __FUNCTION__,                                               \
     "error"                                                     \
-    __VA_OPT__(,)                                               \
-    drop_1(__VA_ARGS__)                                         \
+    comma_drop_1(__VA_ARGS__)                                   \
   )
 
 #define warn(...)                                               \
@@ -236,8 +268,7 @@ type_alias(Line, typeof(__LINE__));
     __LINE__,                                                   \
     __FUNCTION__,                                               \
     "warning"                                                   \
-    __VA_OPT__(,)                                               \
-    drop_1(__VA_ARGS__)                                         \
+    comma_drop_1(__VA_ARGS__)                                   \
   )
 
 #define trace(...)                                              \
@@ -249,8 +280,7 @@ type_alias(Line, typeof(__LINE__));
     __LINE__,                                                   \
     __FUNCTION__,                                               \
     "trace"                                                     \
-    __VA_OPT__(,)                                               \
-    drop_1(__VA_ARGS__)                                         \
+    comma_drop_1(__VA_ARGS__)                                   \
   )
 
 #define shall(what, ...)                                        \
@@ -261,12 +291,11 @@ type_alias(Line, typeof(__LINE__));
         __VA_OPT__(": ")                                        \
         take_1(__VA_ARGS__),                                    \
         #what                                                   \
-        __VA_OPT__(,)                                           \
-        drop_1(__VA_ARGS__)                                     \
+        comma_drop_1(__VA_ARGS__)                               \
       ),                                                        \
       abort(),                                                  \
       true                                                      \
-    )\
+    )                                                           \
   )
 
 #define should(what, ...)                                       \
@@ -277,18 +306,24 @@ type_alias(Line, typeof(__LINE__));
         __VA_OPT__(": ")                                        \
         take_1(__VA_ARGS__),                                    \
         #what                                                   \
-        __VA_OPT__(,)                                           \
-        drop_1(__VA_ARGS__)                                     \
+        comma_drop_1(__VA_ARGS__)                               \
       ),                                                        \
       true                                                      \
     )                                                           \
+  )
+
+#define whereas(what)                                           \
+  (                                                             \
+    (what) ?                                                    \
+    (trace("whereas(%s): true", #what), true) :                 \
+    (trace("whereas(%s): false", #what), false)                 \
   )
 
 #define be_same(fmtx, fmtd, t, a, b)                            \
   "((%s) = %"fmtx" (%"fmtd"))"                                  \
   " = "                                                         \
   "((%s) = %"fmtx" (%"fmtd"))",                                 \
-  #a, (t)(a), (t)(a), \
+  #a, (t)(a), (t)(a),                                           \
   #b, (t)(b), (t)(b)
 
 #define be_same_32(a, b)                                        \
@@ -306,7 +341,7 @@ type_alias(Line, typeof(__LINE__));
 
 #define should_be_same(a, b)                                    \
   _Generic(                                                     \
-  (a),                                                          \
+    (a),                                                        \
     U64Var: ((void)should((a) == (b), be_same_64(a, b)), (a)),  \
     U32Var: ((void)should((a) == (b), be_same_32(a, b)), (a))   \
   )
@@ -315,8 +350,10 @@ type_alias(Line, typeof(__LINE__));
 //  Main entry point
 ////////////////////////////////////////////////////////////////
 
-static Bool nb(
-  [[maybe_unused]] Str pgm,
+static Bool
+nb(
+  [[maybe_unused]]
+  Str pgm,
   Num arg_num,
   Args args
 );
@@ -386,20 +423,183 @@ static inline U64 rl64(U8Ref there) {
 }
 
 
+//  The unavoidable twiddling of bits
+////////////////////////////////////////////////////////////////
+
+// A mask with the nth bit set, equal to 2^n.
+static inline U64 bit_64(U64 n) {
+  shall(n < bitsof(U64));
+  return u64(1) << n;
+}
+
+// A mask of all zeros.
+static U64 zeros_64 = u64(0);
+
+// A mask of all ones.
+static U64 ones_64 = compl zeros_64;
+
+// A 64-bit mask with the n bits in the range [(n - 1) : 0] set.
+static inline U64 mask_64(U64 n) {
+  shall(n <= bitsof(U64));
+  return
+    n == 0 ? zeros_64 :
+    n == 64 ? ones_64 :
+    ones_64 >> (64 - n);
+}
+
+// Gets the last tab stop of size 2^x from n,
+// rounding n downward to the greatest kd =< n where d = 2^x,
+// in the range [n - ((2^x)-1) : n].
+static inline U64 down_64(U64 n, U64 x) {
+  return n & compl mask_64(x);
+}
+
+// Gets how far n is above the last tab stop of size 2^x,
+// in the range [0 : ((2^x)-1)].
+static inline U64 above_64(U64 n, U64 x) {
+  return n & mask_64(x);
+}
+
+// Gets the next stab stop of size 2^x from n,
+// rounding n upward to the least kd >= n where d = 2^x,
+// in the range [n : n + ((2^x)-1)].
+static inline U64 up_64(U64 n, U64 x) {
+  shall(n <= UINT64_MAX - mask_64(x));
+  return down_64(mask_64(x) + n, x);
+}
+
+// Gets how far n is below the next tab stop of size 2^x,
+// in the range [0 : ((2^x)-1)].
+static inline U64 below_64(U64 n, U64 x) {
+  return mask_64(x) - above_64(n - 1, x);
+}
+
+
+//  Ownership
+////////////////////////////////////////////////////////////////
+
+enum_type(
+  Owner,
+  Static,
+  Dynamic,
+);
+
+
 //  Buffers
 ////////////////////////////////////////////////////////////////
 
 struct_type(Buf);
 
 struct Buf {
-  U8VarRefVar in;
-  SizeVar at;
-  SizeVar end;
+  U8VarRefVar  in;
+  OwnerVar     owner;
+  SizeVar      at;
+  SizeVar      end;
 };
+
+union_type(V16U8);
+
+union V16U8 {
+  U8 vec[16];
+  unsigned char str[16];
+};
+
+////////////////////////////////
+
+static inline Bool
+buf_wf(
+  BufRef buf
+);
+
+static inline Bool
+buf_open(
+  BufVarRef buf,
+  Num num,
+  Size size
+);
+
+static inline Size
+buf_room(
+  BufRef buf
+);
+
+static inline Bool
+buf_has(
+  BufRef buf,
+  Size size
+);
+
+static inline U8Ref
+buf_from(
+  BufRef buf
+);
+
+static inline U8VarRef
+buf_to(
+  BufRef buf
+);
+
+static inline void
+buf_rewind(
+  BufVarRef buf
+);
+
+static inline void
+buf_skip(
+  BufVarRef buf,
+  Size by
+);
+
+static inline void
+buf_out_str(
+  BufVarRef buf,
+  Str str,
+  Num max
+);
+
+static inline void
+buf_out_u8(
+  BufVarRef buf,
+  U8 i
+);
+
+static inline void
+buf_out_u32(
+  BufVarRef buf,
+  U32 i
+);
+
+static inline void
+buf_out_u64(
+  BufVarRef buf,
+  U64 i
+);
+
+static inline void
+buf_out_v16u8(
+  BufVarRef buf,
+  V16U8 v
+);
+
+static inline void
+buf_out_pad(
+  BufVarRef buf,
+  Stride till
+);
+
+static inline Bool
+buf_shut(
+  BufVarRef buf
+);
+
+////////////////////////////////
 
 //  Says whether a `buf` is well formed.
 [[maybe_unused]]
-static inline Bool buf_wf(BufRef buf) {
+static inline Bool
+buf_wf(
+  BufRef buf
+) {
   return
     should(buf != nullptr) and (
       should(buf->in != nullptr) and
@@ -407,36 +607,82 @@ static inline Bool buf_wf(BufRef buf) {
     );
 }
 
+static inline Bool
+buf_open(
+  BufVarRef buf,
+  Num num,
+  Size size
+) {
+  shall(buf != nullptr);
+  typeof(buf->in) const in = calloc(num, size);
+  Bool const calloc_succeeded = shall(in != nullptr);
+  *buf = (Buf){
+
+    .in     = in                                    ,
+    .owner  = (Owner){Dynamic}                      ,
+    .at     = 0                                     ,
+    .end    = ((void)calloc_succeeded, num * size)  ,
+
+  };
+  return true;
+}
+
 //  Says how much room `buf` has at `buf->at` before `buf->end`.
 [[maybe_unused]]
-static inline Size buf_room(BufRef buf) {
+static inline Size
+buf_room(
+  BufRef buf
+) {
   shall(buf_wf(buf));
   return buf->end - buf->at;
 }
 
 //  Says whether `buf` has `size` bytes available.
 [[maybe_unused]]
-static inline Bool buf_has(BufRef buf, Size size) {
+static inline Bool
+buf_has(
+  BufRef buf,
+  Size size
+) {
   shall(buf_wf(buf));
   return size <= buf_room(buf);
 }
 
 //  Gets a pointer to read from `buf`.
 [[maybe_unused]]
-static inline U8Ref buf_from(BufRef buf) {
+static inline U8Ref
+buf_from(
+  BufRef buf
+) {
   shall(buf_wf(buf));
   return &buf->in[buf->at];
 }
 
 //  Gets a pointer to write to `buf`.
 [[maybe_unused]]
-static inline U8VarRef buf_to(BufRef buf) {
+static inline U8VarRef
+buf_to(
+  BufRef buf
+) {
   shall(buf_wf(buf));
   return &buf->in[buf->at];
 }
 
 [[maybe_unused]]
-static inline void buf_skip(BufVarRef buf, Size by) {
+static inline void
+buf_rewind(
+  BufVarRef buf
+) {
+  shall(buf_wf(buf));
+  buf->at = 0;
+}
+
+[[maybe_unused]]
+static inline void
+buf_skip(
+  BufVarRef buf,
+  Size by
+) {
   shall(buf_wf(buf));
   shall(buf_has(buf, by));
   Size at = buf->at + +by;
@@ -444,7 +690,8 @@ static inline void buf_skip(BufVarRef buf, Size by) {
 }
 
 [[maybe_unused]]
-static inline void buf_out_str(
+static inline void
+buf_out_str(
   BufVarRef buf,
   Str str,
   Num max
@@ -467,7 +714,11 @@ static inline void buf_out_str(
 }
 
 [[maybe_unused]]
-static inline void buf_out_u8(BufVarRef buf, U8 i) {
+static inline void
+buf_out_u8(
+  BufVarRef buf,
+  U8 i
+) {
   Size size = sizeof i;
   shall(buf_has(buf, size));
   U8VarRef to = buf_to(buf);
@@ -476,7 +727,11 @@ static inline void buf_out_u8(BufVarRef buf, U8 i) {
 }
 
 [[maybe_unused]]
-static inline void buf_out_u32(BufVarRef buf, U32 i) {
+static inline void
+buf_out_u32(
+  BufVarRef buf,
+  U32 i
+) {
   Size size = sizeof i;
   shall(buf_has(buf, size));
   U8VarRef to = buf_to(buf);
@@ -488,7 +743,11 @@ static inline void buf_out_u32(BufVarRef buf, U32 i) {
 }
 
 [[maybe_unused]]
-static inline void buf_out_u64(BufVarRef buf, U64 i) {
+static inline void
+buf_out_u64(
+  BufVarRef buf,
+  U64 i
+) {
   Size size = sizeof i;
   shall(buf_has(buf, size));
   U8VarRef to = buf_to(buf);
@@ -503,15 +762,12 @@ static inline void buf_out_u64(BufVarRef buf, U64 i) {
   buf_skip(buf, size);
 }
 
-union_type(V16U8);
-
-union V16U8 {
-  U8 vec[16];
-  unsigned char str[16];
-};
-
 [[maybe_unused]]
-static inline void buf_out_v16u8(BufVarRef buf, V16U8 v) {
+static inline void
+buf_out_v16u8(
+  BufVarRef buf,
+  V16U8 v
+) {
   static_assert(sizeof v.vec == 16);
   shall(buf->at < buf->end - sizeof v.vec);
   U8VarRef here = &buf->in[buf->at];
@@ -520,7 +776,11 @@ static inline void buf_out_v16u8(BufVarRef buf, V16U8 v) {
 }
 
 [[maybe_unused]]
-static inline void buf_out_pad(BufVarRef buf, Stride till) {
+static inline void
+buf_out_pad(
+  BufVarRef buf,
+  Stride till
+) {
   shall(till >= 1);
   shall(till <= buf->end);
   // shall(buf->end % till == 0 or buf->at <= (buf->end + 1) / till);
@@ -531,6 +791,17 @@ static inline void buf_out_pad(BufVarRef buf, Stride till) {
   //  IDEA: Add an option to skip writing zeros.
   memset((void *)buf_to(buf), 0, by);
   buf_skip(buf, by);
+}
+
+static inline Bool
+buf_shut(
+  BufVarRef buf
+) {
+  shall(buf_wf(buf));
+  if (buf->owner.id == Dynamic)
+    free(buf->in);
+  *buf = (Buf){};
+  return true;
 }
 
 
@@ -592,6 +863,7 @@ task_def(out_pad    , (Size  size  ),  size  );
 task_def(end_elt    , (Str   tag   ),  tag   );
 task_def(end        , (            )         );
 
+[[maybe_unused]]
 static inline Bool task_elt_u32(
   TaskVarRef  task,
   Str         tag,
@@ -600,6 +872,7 @@ static inline Bool task_elt_u32(
   return task_elt(task, tag) and task_out_u32(task, val);
 }
 
+[[maybe_unused]]
 static inline Bool task_elt_u64(
   TaskVarRef  task,
   Str         tag,
@@ -608,6 +881,7 @@ static inline Bool task_elt_u64(
   return task_elt(task, tag) and task_out_u64(task, val);
 }
 
+[[maybe_unused]]
 static inline Bool task_elt_v16u8(
   TaskVarRef  task,
   Str         tag,
@@ -1414,29 +1688,106 @@ struct NumEltsTask {
   SizeVar  ends;
 };
 
+static inline Bool
+num_elts_open(
+  NumEltsTaskVarRef num_elts
+);
+
+static inline Bool
+num_elts_beg_elt(
+  TaskVarRef task,
+  [[maybe_unused]]
+  Tag tag
+);
+
+static inline Bool
+num_elts_elt(
+  TaskVarRef task,
+  [[maybe_unused]]
+  Tag tag
+);
+
+static inline Bool
+num_elts_end_elt(
+  TaskVarRef task,
+  Tag tag
+);
+
+static inline Bool
+num_elts_end(
+  TaskVarRef task
+);
+
+static inline Bool
+num_elts_open(
+  NumEltsTaskVarRef num_elts
+) {
+  shall(num_elts != nullptr);
+  *num_elts = (NumEltsTask){
+    .task = (Task){
+
+      .beg_elt  = num_elts_beg_elt  ,
+      .elt      = num_elts_elt      ,
+      .end_elt  = num_elts_end_elt  ,
+      .end      = num_elts_end      ,
+
+    },
+
+    .begs    = 0                   ,
+    .depth   = num_elts_min_depth  ,
+    .leaves  = 0                   ,
+    .ends    = 0                   ,
+
+  };
+  return true;
+}
+
+static inline Bool
+num_elts_task(
+  NumEltsTaskVarRef num_elts
+) {
+  shall(num_elts != nullptr);
+  return
+    num_elts_open(num_elts) and
+    work((TaskVarRef)num_elts) and
+    (
+      trace(
+        "counted "
+        "(%zu = %zu) branches + %zu leaves = %zu elements",
+        num_elts->begs,
+        num_elts->ends,
+        num_elts->leaves,
+        num_elts->ends + num_elts->leaves
+      ),
+      true
+    );
+}
+
 static inline Bool num_elts_beg_elt(
   TaskVarRef task,
-  [[maybe_unused]] Tag tag
-  ) {
+  [[maybe_unused]]
+  Tag tag
+) {
   shall(task != nullptr);
-  NumEltsTaskVarRef self = (NumEltsTaskVarRef)task;
-  shall(self->begs < SIZE_MAX);
-  shall(self->depth < SIZE_MAX);
+  NumEltsTaskVarRef num_elts = (NumEltsTaskVarRef)task;
+  shall(num_elts->begs < SIZE_MAX);
+  shall(num_elts->depth < SIZE_MAX);
   return
-    ++self->begs,
-    ++self->depth,
+    ++num_elts->begs,
+    ++num_elts->depth,
     true;
 }
 
 static inline Bool num_elts_elt(
   TaskVarRef task,
-  [[maybe_unused]] Tag tag
-  ) {
+  [[maybe_unused]]
+  Tag tag
+) {
   shall(task != nullptr);
-  NumEltsTaskVarRef self = (NumEltsTaskVarRef)task;
-  shall(self->leaves < SIZE_MAX);
+  NumEltsTaskVarRef num_elts = (NumEltsTaskVarRef)task;
+  shall(num_elts->leaves < SIZE_MAX);
   return
-    ++self->leaves,
+    ++num_elts->leaves,
     true;
 }
 
@@ -1445,12 +1796,12 @@ static inline Bool num_elts_end_elt(
   Tag tag
 ) {
   shall(task != nullptr);
-  NumEltsTaskVarRef self = (NumEltsTaskVarRef)task;
-  shall(self->ends < SIZE_MAX);
+  NumEltsTaskVarRef num_elts = (NumEltsTaskVarRef)task;
+  shall(num_elts->ends < SIZE_MAX);
   return
-    self->depth >= num_elts_min_depth ? (
-      ++self->ends,
-      --self->depth,
+    num_elts->depth >= num_elts_min_depth ? (
+      ++num_elts->ends,
+      --num_elts->depth,
       true
     ) :
     (
@@ -1461,9 +1812,9 @@ static inline Bool num_elts_end_elt(
         "ends: %zu, "
         "depth: %zu",
         tag,
-        self->begs,
-        self->ends,
-        self->depth
+        num_elts->begs,
+        num_elts->ends,
+        num_elts->depth
       ),
       false
     );
@@ -1473,10 +1824,10 @@ static inline Bool num_elts_end(
   TaskVarRef task
 ) {
   shall(task != nullptr);
-  NumEltsTaskVarRef self = (NumEltsTaskVarRef)task;
+  NumEltsTaskVarRef num_elts = (NumEltsTaskVarRef)task;
   return
-    self->depth == num_elts_min_depth and
-    self->begs == self->ends
+    num_elts->depth == num_elts_min_depth and
+    num_elts->begs == num_elts->ends
     or (
       error(
         "missing end tag; "
@@ -1484,10 +1835,10 @@ static inline Bool num_elts_end(
         "depth: %zu, "
         "leaves: %zu, "
         "ends: %zu",
-        self->begs,
-        self->depth,
-        self->leaves,
-        self->ends
+        num_elts->begs,
+        num_elts->depth,
+        num_elts->leaves,
+        num_elts->ends
       ),
       false
     );
@@ -1505,58 +1856,93 @@ struct_type(NumTagSizeTask);
 
 struct NumTagSizeTask {
   TaskVar  task;
-  SizeVar  size;     // Total tag bytes without NUL
-  SizeVar  null;     // Total NUL bytes
-  SizeVar  padding;  // Total padding bytes
+  SizeVar  tags;     // Tag bytes without NUL
+  SizeVar  null;     // NUL bytes
+  SizeVar  padding;  // Padding bytes
+  SizeVar  total;    // Total bytes
   SizeVar  max;      // Highest single tag size without NUL
 };
 
-// A mask with the nth bit set, equal to 2^n.
-static inline U64 bit_64(U64 n) {
-  shall(n < bitsof(U64));
-  return u64(1) << n;
-}
+static inline Bool
+num_tag_size_task(
+  NumTagSizeTaskVarRef num_tag_size
+);
 
-// A mask of all zeros.
-static U64 zeros_64 = u64(0);
+static inline Bool
+num_tag_size_wf(
+  NumTagSizeTaskRef num_tag_size
+);
 
-// A mask of all ones.
-static U64 ones_64 = compl zeros_64;
+static inline Bool
+num_tag_size_open(
+  NumTagSizeTaskVarRef num_tag_size
+);
 
-// A 64-bit mask with the n bits in the range [(n - 1) : 0] set.
-static inline U64 mask_64(U64 n) {
-  shall(n <= bitsof(U64));
+static inline Bool
+num_tag_size_beg_elt(
+  TaskVarRef task,
+  Tag tag
+);
+
+static inline Bool
+num_tag_size_end(
+  TaskVarRef task
+);
+
+////////////////////////////////
+
+static inline Bool
+num_tag_size_task(
+  NumTagSizeTaskVarRef num_tag_size
+) {
+  shall(num_tag_size != nullptr);
   return
-    n == 0 ? zeros_64 :
-    n == 64 ? ones_64 :
-    ones_64 >> (64 - n);
+    num_tag_size_open(num_tag_size) and
+    work((TaskVarRef)num_tag_size) and
+    (
+      trace("counted %zu tag bytes", num_tag_size->tags),
+      trace("counted %zu NUL bytes", num_tag_size->null),
+      trace("counted %zu pad bytes", num_tag_size->padding),
+      trace("counted %zu total bytes", num_tag_size->total),
+      trace("max tag size %zu bytes", num_tag_size->max),
+      true
+    );
 }
 
-// Gets the last tab stop of size 2^x from n,
-// rounding n downward to the greatest kd =< n where d = 2^x,
-// in the range [n - ((2^x)-1) : n].
-static inline U64 down_64(U64 n, U64 x) {
-  return n & compl mask_64(x);
+static inline Bool
+num_tag_size_wf(
+  NumTagSizeTaskRef num_tag_size
+) {
+  SizeVar total;
+  return
+    should(num_tag_size != nullptr) and
+    (
+      (total = num_tag_size->tags + num_tag_size->null + num_tag_size->padding),
+      should(num_tag_size->total == total, "%zu != %zu", num_tag_size->total, total) and
+      should(total % (1 << tag_alignment) == 0)
+    );
 }
 
-// Gets how far n is above the last tab stop of size 2^x,
-// in the range [0 : ((2^x)-1)].
-static inline U64 above_64(U64 n, U64 x) {
-  return n & mask_64(x);
-}
+static inline Bool
+num_tag_size_open(
+  NumTagSizeTaskVarRef num_tag_size
+) {
+  shall(num_tag_size != nullptr);
+  *num_tag_size = (NumTagSizeTask){
+    .task = (Task){
 
-// Gets the next stab stop of size 2^x from n,
-// rounding n upward to the least kd >= n where d = 2^x,
-// in the range [n : n + ((2^x)-1)].
-static inline U64 up_64(U64 n, U64 x) {
-  shall(n <= UINT64_MAX - mask_64(x));
-  return down_64(mask_64(x) + n, x);
-}
+      .beg_elt  = num_tag_size_beg_elt  ,
+      .end      = num_tag_size_end      ,
 
-// Gets how far n is below the next tab stop of size 2^x,
-// in the range [0 : ((2^x)-1)].
-static inline U64 below_64(U64 n, U64 x) {
-  return mask_64(x) - above_64(n - 1, x);
+    },
+
+    .tags     = 0  ,
+    .null     = 0  ,
+    .padding  = 0  ,
+    .max      = 0  ,
+
+  };
+  return true;
 }
 
 static inline Bool num_tag_size_beg_elt(
@@ -1564,20 +1950,50 @@ static inline Bool num_tag_size_beg_elt(
   Tag tag
 ) {
   shall(task != nullptr);
-  NumTagSizeTaskVarRef self = (NumTagSizeTaskVarRef)task;
-  shall(
-    (self->size + self->null + self->padding)
-    % (1 << tag_alignment)
-    == 0
+  NumTagSizeTaskVarRef num_tag_size = (NumTagSizeTaskVarRef)task;
+  shall(num_tag_size_wf(num_tag_size));
+  Size tags = strlen(tag);
+  shall(size_has(num_tag_size->tags, tags));
+  shall(size_has(num_tag_size->null, sizeof NUL));
+  Size padding = below_64(tags + sizeof NUL, tag_alignment);
+  Size null = sizeof NUL;
+  num_tag_size->tags += tags;
+  num_tag_size->null += null;
+  num_tag_size->padding += padding;
+  {
+    SizeVar total = num_tag_size->total;
+    shall(size_has(total, tags));
+    total += tags;
+    shall(size_has(total, null));
+    total += null;
+    shall(size_has(total, padding));
+    total += padding;
+    num_tag_size->total = total;
+  }
+  if (num_tag_size->max < tags) num_tag_size->max = tags;
+  return true;
+}
+
+static inline Bool
+num_tag_size_end(
+  TaskVarRef task
+) {
+  shall(task != nullptr);
+  NumTagSizeTaskVarRef num_tag_size = (NumTagSizeTaskVarRef)task;
+  should(
+    num_tag_size->null <= num_tag_size->tags,
+    "there are %zu B of NULs and %zu B of characters, "
+    "yet there should be far fewer NULs than characters, "
+    "unless all strings are empty",
+    num_tag_size->null,
+    num_tag_size->tags
   );
-  Size size = strlen(tag);
-  shall(self->size <= SIZE_MAX - size);
-  shall(self->null <= SIZE_MAX - sizeof NUL);
-  Size padding = below_64(size + sizeof NUL, tag_alignment);
-  self->size += size;
-  self->null += sizeof NUL;
-  self->padding += padding;
-  if (self->max < size) self->max = size;
+  should(
+    num_tag_size->padding != 0,
+    "there are 0 B of padding, "
+    "but this is unlikely "
+    "unless all strings including NULs happen to be aligned"
+  );
   return true;
 }
 
@@ -1601,24 +2017,103 @@ struct NumTagsTask {
   NumVar           end;
 };
 
-static inline Bool num_tags_beg_elt(
+static inline Bool
+num_tags_task(
+  NumTagsTaskVarRef num_tags,
+  NumEltsTaskRef num_elts
+);
+
+static inline Bool
+num_tags_wf(
+  NumTagsTaskVarRef num_tags
+);
+
+static inline Bool
+num_tags_open(
+  NumTagsTaskVarRef num_tags,
+  Num elts
+);
+
+static inline Bool
+num_tags_beg_elt(
+  TaskVarRef task,
+  Tag tag
+);
+
+static inline Bool
+num_tags_task(
+  NumTagsTaskVarRef num_tags,
+  NumEltsTaskRef num_elts
+) {
+  return
+    num_tags_open(num_tags, num_elts->begs + num_elts->leaves) and
+    shall(num_tags_wf(num_tags)) and
+    work((TaskVarRef)num_tags) and
+    (
+      trace("counted %zu unique tags", num_tags->num),
+      true
+    );
+}
+
+static inline Bool
+num_tags_wf(
+  NumTagsTaskVarRef num_tags
+) {
+  return
+    should(num_tags != nullptr) and
+    should(when(num_tags->end != 0, num_tags->set != nullptr)) and
+    should(num_tags->num <= num_tags->end);
+}
+
+static inline Bool
+num_tags_open(
+  NumTagsTaskVarRef num_tags,
+  Num elts
+) {
+  shall(num_tags != nullptr);
+  Size elt_size = sizeof num_tags->set[0];
+  typeof(num_tags->set) const set = calloc(elts, elt_size);
+  Bool const calloc_succeeded = shall(set != nullptr);
+  *num_tags = (NumTagsTask){
+    .task = (Task){
+      .beg_elt = num_tags_beg_elt,
+    },
+    .set = set,
+    .num = 0,
+    .end = ((void)calloc_succeeded, elts * elt_size),
+  };
+  return true;
+}
+
+static inline Bool
+num_tags_beg_elt(
   TaskVarRef task,
   Tag tag
 ) {
   shall(task != nullptr);
   shall(tag != nullptr);
-  NumTagsTaskVarRef self = (NumTagsTaskVarRef)task;
-  shall(self->num <= self->end);
-  for (IdxVar i = 0; i < self->num; ++i) {
-    if (strcmp(self->set[i].tag, tag) == 0) {
-      ++self->set[i].num;
+  NumTagsTaskVarRef num_tags = (NumTagsTaskVarRef)task;
+  shall(num_tags_wf(num_tags));
+  for (IdxVar i = 0; i < num_tags->num; ++i) {
+    if (strcmp(num_tags->set[i].tag, tag) == 0) {
+      ++num_tags->set[i].num;
       return true;
     }
   }
-  shall(self->num < self->end);
-  self->set[self->num].tag = tag;
-  self->set[self->num].num = 1;
-  ++self->num;
+  shall(num_tags->num < num_tags->end);
+  num_tags->set[num_tags->num].tag = tag;
+  num_tags->set[num_tags->num].num = 1;
+  ++num_tags->num;
+  return true;
+}
+
+static inline Bool
+num_tags_shut(
+  NumTagsTaskVarRef num_tags
+) {
+  shall(num_tags_wf(num_tags));
+  free(num_tags->set);
+  *num_tags = (NumTagsTask){};
   return true;
 }
 
@@ -1629,35 +2124,203 @@ static inline Bool num_tags_beg_elt(
 struct_type(OutputTask);
 
 struct OutputTask {
-  TaskVar  task;
-  BufVar   buf;
+  TaskVar      task       ;
+  FilePathVar  file_path  ;
+  BufVar       buf        ;
 };
 
-static inline Bool output_out_u32(TaskVarRef task, U32 val) {
-  shall(task != nullptr);
-  OutputTaskVarRef self = (OutputTaskVarRef)task;
-  buf_out_u32(&self->buf, val);
+////////////////////////////////
+
+static inline Bool
+output_task(
+  OutputTaskVarRef  output,
+  FilePath          file_path
+);
+
+static inline Bool
+output_wf(
+  OutputTaskRef output
+);
+
+static inline Bool
+output_open(
+  OutputTaskVarRef  output,
+  FilePath          file_path
+);
+
+static inline Bool
+output_out_u32(
+  TaskVarRef task,
+  U32 val
+);
+
+static inline Bool
+output_out_u64(
+  TaskVarRef task,
+  U64 val
+);
+
+static inline Bool
+output_out_v16u8(
+  TaskVarRef task,
+  V16U8 val
+);
+
+static inline Bool
+output_out_pad(
+  TaskVarRef task,
+  Size size
+);
+
+static inline Bool
+output_end(
+  TaskVarRef task
+);
+
+static inline Bool
+output_shut(
+  OutputTaskVarRef output
+);
+
+////////////////////////////////
+
+static inline Bool
+output_task(
+  OutputTaskVarRef output,
+  FilePath file_path
+) {
+  return
+    shall(output != nullptr) and
+    output_open(output, file_path) and
+    after(
+      work((TaskVarRef)output),
+      output_shut(output)
+    );
+}
+
+static inline Bool
+output_wf(
+  OutputTaskRef output
+) {
+  return
+    should(output != nullptr) and
+    should(output->file_path != nullptr) and
+    should(buf_wf(&output->buf));
+}
+
+static inline Bool
+output_open(
+  OutputTaskVarRef output,
+  FilePath         file_path
+) {
+  *output = (OutputTaskVar){
+    .task = (Task){
+
+      .out_u32    = output_out_u32    ,
+      .out_u64    = output_out_u64    ,
+      .out_v16u8  = output_out_v16u8  ,
+      .out_pad    = output_out_pad    ,
+      .end        = output_end        ,
+
+    },
+    .file_path = file_path,
+    .buf = (Buf){
+
+      .in     = &reow[0]         ,
+      .owner  = (Owner){Static}  ,
+      .at     = 0                ,
+      .end    = numof(reow)      ,
+
+    }
+  };
   return true;
 }
 
-static inline Bool output_out_u64(TaskVarRef task, U64 val) {
+static inline Bool
+output_out_u32(
+  TaskVarRef task,
+  U32 val
+) {
   shall(task != nullptr);
-  OutputTaskVarRef self = (OutputTaskVarRef)task;
-  buf_out_u64(&self->buf, val);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  buf_out_u32(&output->buf, val);
   return true;
 }
 
-static inline Bool output_out_v16u8(TaskVarRef task, V16U8 val) {
+static inline Bool
+output_out_u64(
+  TaskVarRef task,
+  U64 val
+) {
   shall(task != nullptr);
-  OutputTaskVarRef self = (OutputTaskVarRef)task;
-  buf_out_v16u8(&self->buf, val);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  buf_out_u64(&output->buf, val);
   return true;
 }
 
-static inline Bool output_out_pad(TaskVarRef task, Size size) {
+static inline Bool
+output_out_v16u8(
+  TaskVarRef task,
+  V16U8 val
+) {
   shall(task != nullptr);
-  OutputTaskVarRef self = (OutputTaskVarRef)task;
-  buf_out_pad(&self->buf, size);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  buf_out_v16u8(&output->buf, val);
+  return true;
+}
+
+static inline Bool
+output_out_pad(
+  TaskVarRef task,
+  Size size
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  buf_out_pad(&output->buf, size);
+  return true;
+}
+
+static inline Bool
+output_end(
+  TaskVarRef task
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  shall(output_wf(output));
+  FILE *const file = fopen(output->file_path, "w");
+  if (file == nullptr) return false;
+  Size bytes = output->buf.at;
+  trace("output %zu B", bytes);
+  if (bytes != sizeof reow) warn(
+    "final size %zu is less than wanted size %zu",
+    bytes,
+    sizeof reow
+  );
+  buf_rewind(&output->buf);
+  shall(buf_has(&output->buf, bytes));
+  Num written = fwrite(
+    (void *)buf_from(&output->buf),
+    1,
+    bytes,
+    file
+  );
+  fclose(file);
+  should(
+    written == bytes,
+    "wrote %zu B / %zu B",
+    written,
+    bytes
+  );
+  return true;
+}
+
+static inline Bool
+output_shut(
+  OutputTaskVarRef output
+) {
+  shall(output_wf(output));
+  buf_shut(&output->buf);
+  *output = (OutputTask){};
   return true;
 }
 
@@ -1665,115 +2328,69 @@ static inline Bool output_out_pad(TaskVarRef task, Size size) {
 //  Run compilation passes
 ////////////////////////////////////////////////////////////////
 
+static inline Bool
+save_tags(
+  NumTagsTaskRef num_tags,
+  NumTagSizeTaskRef num_tag_size,
+  BufVarRef tag_buf
+);
+
 Bool nb(
-  [[maybe_unused]] Str pgm,
+  [[maybe_unused]]
+  Str pgm,
   Num arg_num,
   Args args
 ) {
 
+  NumEltsTaskVar     num_elts;
+  NumTagSizeTaskVar  num_tag_size;
+  NumTagsTaskVar     num_tags;
+  BufVar             tag_buf;
+  OutputTaskVar      output;
+
   trace();
+  return
+    arg_num == 1 and
+    num_elts_task(&num_elts) and
+    num_tag_size_task(&num_tag_size) and
+    buf_open(&tag_buf, num_tag_size.total, sizeof(Chr)) and
+    after(
+      (
+        after(
+          (
+            num_tags_task(&num_tags, &num_elts) and
+            save_tags(&num_tags, &num_tag_size, &tag_buf) and
+            output_task(&output, args[0])
+          ),
+          num_tags_shut(&num_tags)
+        )
+      ),
+      buf_shut(&tag_buf)
+    ) and
+    (
+      trace("good"),
+      true
+    );
+}
 
-  if (arg_num != 1) return false;
-
-  NumEltsTaskVar num_elts = (NumEltsTaskVar){
-    .task = (Task){
-      .beg_elt  = num_elts_beg_elt  ,
-      .elt      = num_elts_elt      ,
-      .end_elt  = num_elts_end_elt  ,
-      .end      = num_elts_end      ,
-    },
-    .begs   = 0,
-    .depth  = num_elts_min_depth,
-    .leaves = 0,
-    .ends   = 0,
-  };
-  if (not work((TaskVarRef)&num_elts)) return false;
-  trace(
-    "counted (%zu = %zu) branches + %zu leaves = %zu elements",
-    num_elts.begs,
-    num_elts.ends,
-    num_elts.leaves,
-    num_elts.ends + num_elts.leaves
-  );
-
-  NumTagSizeTaskVar num_tag_size = (NumTagSizeTaskVar){
-    .task = (Task){
-      .beg_elt = num_tag_size_beg_elt,
-    },
-    .size     = 0,
-    .null     = 0,
-    .padding  = 0,
-    .max      = 0,
-  };
-  if (not work((TaskVarRef)&num_tag_size)) return false;
-  trace("counted %zu tag bytes", num_tag_size.size);
-  trace("counted %zu NUL bytes", num_tag_size.null);
-  trace("counted %zu pad bytes", num_tag_size.padding);
-  Size tag_size
-    = num_tag_size.size
-    + num_tag_size.null
-    + num_tag_size.padding;
-  trace("counted %zu total bytes", tag_size);
-  trace("max tag size %zu bytes", num_tag_size.max);
-
-  BufVar tag_buf = (Buf){
-    .in = calloc(tag_size, sizeof(Chr)),
-    .at = 0,
-    .end = tag_size,
-  };
-  shall(tag_buf.in != nullptr);
-
-  NumTagsTaskVar num_tags = (NumTagsTaskVar){
-    .task = (Task){
-      .beg_elt = num_tags_beg_elt,
-    },
-    .set = calloc(num_elts.ends, sizeof num_tags.set[0]),
-    .num = 0,
-    .end = num_elts.ends,
-  };
-  shall(num_tags.set != nullptr);
-  if (not work((TaskVarRef)&num_tags)) return false;
-  trace("counted %zu unique tags", num_tags.num);
-
-  for (IdxVar i = 0; i < num_tags.num; ++i) {
-    buf_out_str(&tag_buf, num_tags.set[i].tag, num_tag_size.max);
-    buf_out_pad(&tag_buf, align_stride(tag_alignment));
+static inline Bool
+save_tags(
+  NumTagsTaskRef num_tags,
+  NumTagSizeTaskRef num_tag_size,
+  BufVarRef tag_buf
+) {
+  shall(num_tags != nullptr);
+  shall(num_tag_size != nullptr);
+  shall(buf_wf(tag_buf));
+  for (IdxVar i = 0; i < num_tags->num; ++i) {
+    buf_out_str(
+      tag_buf,
+      num_tags->set[i].tag,
+      num_tag_size->max
+    );
+    buf_out_pad(tag_buf, align_stride(tag_alignment));
   }
-
-  free(tag_buf.in);
-  free(num_tags.set);
-
-  FILE *o = fopen(args[0], "wb");
-  shall(o);
-
-  OutputTaskVar output = (OutputTaskVar){
-    .task = (Task){
-      .out_u32   = output_out_u32    ,
-      .out_u64   = output_out_u64    ,
-      .out_v16u8 = output_out_v16u8  ,
-      .out_pad   = output_out_pad    ,
-    },
-    .buf = (Buf){
-      .in = &reow[0],
-      .at = 0,
-      .end = numof(reow)
-    }
-  };
-  if (not work((TaskVarRef)&output)) return false;
-  shall(output.buf.at <= output.buf.end);
-  Size size = output.buf.at;
-  trace("output %zu bytes", size);
-  if (size != sizeof reow) warn(
-    "final size %zu is less than wanted size %zu",
-    size,
-    sizeof reow
-  );
-  fwrite((void *)&reow[0], 1, size, o);
-  fclose(o);
-
-  trace("good");
   return true;
-
 }
 
 
