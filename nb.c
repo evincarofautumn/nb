@@ -165,30 +165,28 @@ size_has(
 
 type_alias(U1    , unsigned _BitInt(  1));
 type_alias(U8    , unsigned _BitInt(  8));
+type_alias(U10   , unsigned _BitInt( 10));
 type_alias(U16   , unsigned _BitInt( 16));
 type_alias(U24   , unsigned _BitInt( 24));
 type_alias(U32   , unsigned _BitInt( 32));
 type_alias(U64   , unsigned _BitInt( 64));
-type_alias(U128  , unsigned _BitInt(128));
 
 #define U1(n)    ((U1Var)(n))
 #define U8(n)    ((U8Var)(n))
+#define U10(n)   ((U10Var)(n))
 #define U16(n)   ((U16Var)(n))
 #define U24(n)   ((U24Var)(n))
 #define U32(n)   ((U32Var)(n))
 #define U64(n)   ((U64Var)(n))
-#define U128(n)  ((U128Var)(n))
 
 #define u(n)       (n##uwb)
 #define u1(n)      (U1(u(n)))
 #define u8(n)      (U8(u(n)))
+#define u10(n)     (U10(u(n)))
 #define u16(n)     (U16(u(n)))
 #define u24(n)     (U24(u(n)))
 #define u32(n)     (U32(u(n)))
 #define u64(n)     (U64(u(n)))
-
-// You can have 128-bit values, but you can't write them!
-#define u128(h,l)  (U128(h) << 10'0 | U128(l))
 
 
 //  Output buffer, as long as we're generating static output
@@ -327,10 +325,10 @@ type_alias(Line, typeof(__LINE__));
   #b, (t)(b), (t)(b)
 
 #define be_same_32(a, b)                                        \
-  be_same("0.8"PRIX32, PRId32, uint32_t, a, b)
+  be_same("0.8"PRIX32, PRIu32, uint32_t, a, b)
 
 #define be_same_64(a, b)                                        \
-  be_same("0.16"PRIX64, PRId64, uint64_t, a, b)
+  be_same("0.16"PRIX64, PRIu64, uint64_t, a, b)
 
 #define shall_be_same(a, b)                                     \
   _Generic(                                                     \
@@ -392,33 +390,33 @@ static inline Stride align_stride(Align align) {
 [[maybe_unused]]
 static inline U32 l32(U32 i) {
   return 0
-    | ((i & u32(0x000000FF)) << 03'0)
-    | ((i & u32(0x0000FF00)) << 01'0)
-    | ((i & u32(0x00FF0000)) >> 01'0)
-    | ((i & u32(0xFF000000)) >> 03'0);
+    | ((i & u32(0x000000FF)) << 0'3'0)
+    | ((i & u32(0x0000FF00)) << 0'1'0)
+    | ((i & u32(0x00FF0000)) >> 0'1'0)
+    | ((i & u32(0xFF000000)) >> 0'3'0);
 }
 
 [[maybe_unused]]
 static inline U32 rl32(U8Ref there) {
   return
-    ( U32(there[0]) << 00'0
-    | U32(there[1]) << 01'0
-    | U32(there[2]) << 02'0
-    | U32(there[3]) << 03'0
+    ( U32(there[0]) << 0'0'0
+    | U32(there[1]) << 0'1'0
+    | U32(there[2]) << 0'2'0
+    | U32(there[3]) << 0'3'0
     );
 }
 
 [[maybe_unused]]
 static inline U64 rl64(U8Ref there) {
   return
-    ( U64(there[0]) << 00'0
-    | U64(there[1]) << 01'0
-    | U64(there[2]) << 02'0
-    | U64(there[3]) << 03'0
-    | U64(there[4]) << 04'0
-    | U64(there[5]) << 05'0
-    | U64(there[6]) << 06'0
-    | U64(there[7]) << 07'0
+    ( U64(there[0]) << 0'0'0
+    | U64(there[1]) << 0'1'0
+    | U64(there[2]) << 0'2'0
+    | U64(there[3]) << 0'3'0
+    | U64(there[4]) << 0'4'0
+    | U64(there[5]) << 0'5'0
+    | U64(there[6]) << 0'6'0
+    | U64(there[7]) << 0'7'0
     );
 }
 
@@ -493,8 +491,8 @@ struct_type(Buf);
 struct Buf {
   U8VarRefVar  in;
   OwnerVar     owner;
-  SizeVar      at;
-  SizeVar      end;
+  IdxVar       at;
+  IdxVar       end;
 };
 
 union_type(V16U8);
@@ -551,13 +549,6 @@ buf_skip(
 );
 
 static inline void
-buf_out_str(
-  BufVarRef buf,
-  Str str,
-  Num max
-);
-
-static inline void
 buf_out_u8(
   BufVarRef buf,
   U8 i
@@ -585,6 +576,13 @@ static inline void
 buf_out_pad(
   BufVarRef buf,
   Stride till
+);
+
+static inline void
+buf_out_str(
+  BufVarRef buf,
+  Str str,
+  Num max
 );
 
 static inline Bool
@@ -691,6 +689,97 @@ buf_skip(
 
 [[maybe_unused]]
 static inline void
+buf_out_u8(
+  BufVarRef buf,
+  U8 i
+) {
+  Size size = sizeof i;
+  shall(buf_has(buf, size));
+  U8VarRef to = buf_to(buf);
+  to[0] = i;
+  buf_skip(buf, size);
+}
+
+[[maybe_unused]]
+static inline void
+buf_out_u32(
+  BufVarRef buf,
+  U32 i
+) {
+  Size size = sizeof i;
+  shall(buf_has(buf, size));
+  U8VarRef to = buf_to(buf);
+  to[0] = (i & u32(0x000000FF)) >> 0'0'0;
+  to[1] = (i & u32(0x0000FF00)) >> 0'1'0;
+  to[2] = (i & u32(0x00FF0000)) >> 0'2'0;
+  to[3] = (i & u32(0xFF000000)) >> 0'3'0;
+  buf_skip(buf, size);
+}
+
+[[maybe_unused]]
+static inline void
+buf_out_u64(
+  BufVarRef buf,
+  U64 i
+) {
+  Size size = sizeof i;
+  shall(buf_has(buf, size));
+  U8VarRef to = buf_to(buf);
+  to[0] = (i & u64(0x00000000'000000FF)) >> 0'0'0;
+  to[1] = (i & u64(0x00000000'0000FF00)) >> 0'1'0;
+  to[2] = (i & u64(0x00000000'00FF0000)) >> 0'2'0;
+  to[3] = (i & u64(0x00000000'FF000000)) >> 0'3'0;
+  to[4] = (i & u64(0x000000FF'00000000)) >> 0'4'0;
+  to[5] = (i & u64(0x0000FF00'00000000)) >> 0'5'0;
+  to[6] = (i & u64(0x00FF0000'00000000)) >> 0'6'0;
+  to[7] = (i & u64(0xFF000000'00000000)) >> 0'7'0;
+  buf_skip(buf, size);
+}
+
+[[maybe_unused]]
+static inline void
+buf_out_v16u8(
+  BufVarRef buf,
+  V16U8 v
+) {
+  static_assert(sizeof v.vec == 16);
+  shall(buf->at < buf->end - sizeof v.vec);
+  U8VarRef here = &buf->in[buf->at];
+  memcpy((void *)&here[0], (void *)&v.vec[0], sizeof v.vec);
+  buf->at += +sizeof v.vec;
+}
+
+//  Adds 0 or more bytes of padding up to a multiple of `till`.
+[[maybe_unused]]
+static inline void
+buf_out_pad(
+  BufVarRef buf,
+  Stride stride
+) {
+  shall(stride >= 1);
+  shall(stride <= buf->end);
+  // shall(buf->end % stride == 0 or buf->at <= (buf->end + 1) / stride);
+  if (buf->at % stride == 0) return;
+  Size to = ((buf->at + stride) / stride) * stride;
+  shall(
+    to <= buf->end,
+    "padding with stride %zu from %zu to %zu falls after %zu",
+    stride,
+    buf->at,
+    to,
+    buf->end
+  );
+  Size by = to - buf->at;
+  //  IDEA: Add an option to skip writing zeros.
+  memset((void *)buf_to(buf), 0, by);
+  buf_skip(buf, by);
+}
+
+//  Outputs `str`, including a NUL terminator.
+//  The size must be no more than `max`.
+//  Doesn't do any padding.
+[[maybe_unused]]
+static inline void
 buf_out_str(
   BufVarRef buf,
   Str str,
@@ -713,86 +802,6 @@ buf_out_str(
   buf_skip(buf, size);
 }
 
-[[maybe_unused]]
-static inline void
-buf_out_u8(
-  BufVarRef buf,
-  U8 i
-) {
-  Size size = sizeof i;
-  shall(buf_has(buf, size));
-  U8VarRef to = buf_to(buf);
-  to[0] = i;
-  buf_skip(buf, size);
-}
-
-[[maybe_unused]]
-static inline void
-buf_out_u32(
-  BufVarRef buf,
-  U32 i
-) {
-  Size size = sizeof i;
-  shall(buf_has(buf, size));
-  U8VarRef to = buf_to(buf);
-  to[0] = (i & u32(0x000000FF)) >> 00'0;
-  to[1] = (i & u32(0x0000FF00)) >> 01'0;
-  to[2] = (i & u32(0x00FF0000)) >> 02'0;
-  to[3] = (i & u32(0xFF000000)) >> 03'0;
-  buf_skip(buf, size);
-}
-
-[[maybe_unused]]
-static inline void
-buf_out_u64(
-  BufVarRef buf,
-  U64 i
-) {
-  Size size = sizeof i;
-  shall(buf_has(buf, size));
-  U8VarRef to = buf_to(buf);
-  to[0] = (i & u64(0x00000000'000000FF)) >> 00'0;
-  to[1] = (i & u64(0x00000000'0000FF00)) >> 01'0;
-  to[2] = (i & u64(0x00000000'00FF0000)) >> 02'0;
-  to[3] = (i & u64(0x00000000'FF000000)) >> 03'0;
-  to[4] = (i & u64(0x000000FF'00000000)) >> 04'0;
-  to[5] = (i & u64(0x0000FF00'00000000)) >> 05'0;
-  to[6] = (i & u64(0x00FF0000'00000000)) >> 06'0;
-  to[7] = (i & u64(0xFF000000'00000000)) >> 07'0;
-  buf_skip(buf, size);
-}
-
-[[maybe_unused]]
-static inline void
-buf_out_v16u8(
-  BufVarRef buf,
-  V16U8 v
-) {
-  static_assert(sizeof v.vec == 16);
-  shall(buf->at < buf->end - sizeof v.vec);
-  U8VarRef here = &buf->in[buf->at];
-  memcpy((void *)&here[0], (void *)&v.vec[0], sizeof v.vec);
-  buf->at += +sizeof v.vec;
-}
-
-[[maybe_unused]]
-static inline void
-buf_out_pad(
-  BufVarRef buf,
-  Stride till
-) {
-  shall(till >= 1);
-  shall(till <= buf->end);
-  // shall(buf->end % till == 0 or buf->at <= (buf->end + 1) / till);
-  if (buf->at % till == 0) return;
-  Size to = ((buf->at + till) / till) * till;
-  shall(to <= buf->end);
-  Size by = to - buf->at;
-  //  IDEA: Add an option to skip writing zeros.
-  memset((void *)buf_to(buf), 0, by);
-  buf_skip(buf, by);
-}
-
 static inline Bool
 buf_shut(
   BufVarRef buf
@@ -811,23 +820,27 @@ buf_shut(
 struct_type(Task);
 
 function_type(Beg       , Bool, (TaskVarRef task                 ));
+function_type(At        , Bool, (TaskVarRef task  , Idx    idx   ));
 function_type(BegElt    , Bool, (TaskVarRef task  , Str    tag   ));
 function_type(Elt       , Bool, (TaskVarRef task  , Str    tag   ));
 function_type(OutU32    , Bool, (TaskVarRef task  , U32    val   ));
 function_type(OutU64    , Bool, (TaskVarRef task  , U64    val   ));
 function_type(OutV16U8  , Bool, (TaskVarRef task  , V16U8  val   ));
 function_type(OutPad    , Bool, (TaskVarRef task  , Size   size  ));
+function_type(OutStr    , Bool, (TaskVarRef task  , Str    str   ));
 function_type(EndElt    , Bool, (TaskVarRef task  , Str    tag   ));
 function_type(End       , Bool, (TaskVarRef task                 ));
 
 struct Task {
   BegRefVar       beg        ;
+  AtRefVar        at         ;
   BegEltRefVar    beg_elt    ;
   EltRefVar       elt        ;
   OutU32RefVar    out_u32    ;
   OutU64RefVar    out_u64    ;
   OutV16U8RefVar  out_v16u8  ;
   OutPadRefVar    out_pad    ;
+  OutStrRefVar    out_str    ;
   EndEltRefVar    end_elt    ;
   EndRefVar       end        ;
 };
@@ -853,15 +866,17 @@ struct Task {
     );                                                          \
   }
 
-task_def(beg        , (            )         );
-task_def(beg_elt    , (Str   tag   ),  tag   );
-task_def(elt        , (Str   tag   ),  tag   );
-task_def(out_u32    , (U32   val   ),  val   );
-task_def(out_u64    , (U64   val   ),  val   );
-task_def(out_v16u8  , (V16U8 val   ),  val   );
-task_def(out_pad    , (Size  size  ),  size  );
-task_def(end_elt    , (Str   tag   ),  tag   );
-task_def(end        , (            )         );
+task_def(beg        , (                )           );
+task_def(at         , (Idx     idx     ),  idx     );
+task_def(beg_elt    , (Str     tag     ),  tag     );
+task_def(elt        , (Str     tag     ),  tag     );
+task_def(out_u32    , (U32     val     ),  val     );
+task_def(out_u64    , (U64     val     ),  val     );
+task_def(out_v16u8  , (V16U8   val     ),  val     );
+task_def(out_pad    , (Stride  stride  ),  stride  );
+task_def(out_str    , (Str     str     ),  str     );
+task_def(end_elt    , (Str     tag     ),  tag     );
+task_def(end        , (                )           );
 
 [[maybe_unused]]
 static inline Bool task_elt_u32(
@@ -978,6 +993,7 @@ Bool work(TaskVarRef task) {
   ////////////////////////////////////////////////////////////
 
   task_beg(task);
+  task_at(task, 0x0000);
 
   task_beg_elt(task, "file"); {
 
@@ -1049,10 +1065,10 @@ Bool work(TaskVarRef task) {
                                                                         u32(1056)));
           task_elt(task, "flags"       );  task_out_u32(  task,
                                                           shall_be_same(  u32(0x00200085),
-                                                                          ( shall_be_same(shall_be_same(u32(0x00200000), U32(MH_PIE)     ), u32(1) << 02'5)
-                                                                          | shall_be_same(shall_be_same(u32(0x00000080), U32(MH_TWOLEVEL)), u32(1) << 00'7)
-                                                                          | shall_be_same(shall_be_same(u32(0x00000004), U32(MH_DYLDLINK)), u32(1) << 00'2)
-                                                                          | shall_be_same(shall_be_same(u32(0x00000001), U32(MH_NOUNDEFS)), u32(1) << 00'0)
+                                                                          ( shall_be_same(shall_be_same(u32(0x00200000), U32(MH_PIE)     ), u32(1) << 0'2'5)
+                                                                          | shall_be_same(shall_be_same(u32(0x00000080), U32(MH_TWOLEVEL)), u32(1) << 0'0'7)
+                                                                          | shall_be_same(shall_be_same(u32(0x00000004), U32(MH_DYLDLINK)), u32(1) << 0'0'2)
+                                                                          | shall_be_same(shall_be_same(u32(0x00000001), U32(MH_NOUNDEFS)), u32(1) << 0'0'0)
                                                                           )));
 
           task_elt(task, "reserved");
@@ -1060,10 +1076,11 @@ Bool work(TaskVarRef task) {
 
         } task_end_elt(task, "mach_header_64");
 
+        task_at(task, 0x0020);
         // TODO: on set load_commands_end: assert: sizeofcmds  = load_commands_end - load_commands_beg
-
         task_beg_elt(task, "load_commands"); {
 
+          task_at(task, 0x0020);
           task_beg_elt(task, "segment_command_64"); {
 
             task_elt(  task, "cmd"       );  task_out_u32(    task, shall_be_same(u32(0x00000019),
@@ -1081,7 +1098,7 @@ Bool work(TaskVarRef task) {
 
           } task_end_elt(task, "segment_command_64");
 
-          // command 2
+          task_at(task, u32(0x0068));
           task_beg_elt(task, "segment_command_64"); {
 
             task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
@@ -1096,98 +1113,109 @@ Bool work(TaskVarRef task) {
             task_elt(  task, "nsects"    );  task_out_u32(    task,  u32(0x00000004)                                    );
             task_elt(  task, "flags"     );  task_out_u32(    task,  u32(0x00000000)                                    );
 
-            task_beg_elt(task, "section_64"); {
+            //  segment_command_64.begin
+            //  + sizeof segment_command_64
+            task_at(task, 0x00B0);
+            task_beg_elt(task, "sections"); {
 
-              task_elt(  task, "sectname"  );  task_out_v16u8(  task, (V16U8){.str = u8"__text"}  );
-              task_elt(  task, "segname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}  );
-              task_elt(  task, "addr"      );  task_out_u64(    task, u64(0x00000001'00000460)    );
-              task_elt(  task, "size"      );  task_out_u64(    task, u64(0x00000000'0000003c)    );
-              task_elt(  task, "offset"    );  task_out_u32(    task, u32(0x00000460)             );
-              task_elt(  task, "align"     );  task_out_u32(    task, u32(0x00000002)             );
-              task_elt(  task, "reloff"    );  task_out_u32(    task, u32(0x00000000)             );
-              task_elt(  task, "nreloc"    );  task_out_u32(    task, u32(0x00000000)             );
-              task_elt(  task, "flags"     );  task_out_u32(    task, shall_be_same(u32(0x80000400),
-                                                                                    ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
-                                                                                      & shall_be_same(u32(0x00000000), U32(S_REGULAR))
-                                                                                      )
-                                                                                    | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
-                                                                                      & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
-                                                                                        | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+              task_at(task, 0x00B0);
+              task_beg_elt(task, "section_64"); {
+
+                task_elt(  task, "sectname"  );  task_out_v16u8(  task, (V16U8){.str = u8"__text"}  );
+                task_elt(  task, "segname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}  );
+                task_elt(  task, "addr"      );  task_out_u64(    task, u64(0x00000001'00000460)    );
+                task_elt(  task, "size"      );  task_out_u64(    task, u64(0x00000000'0000003c)    );
+                task_elt(  task, "offset"    );  task_out_u32(    task, u32(0x00000460)             );
+                task_elt(  task, "align"     );  task_out_u32(    task, u32(0x00000002)             );
+                task_elt(  task, "reloff"    );  task_out_u32(    task, u32(0x00000000)             );
+                task_elt(  task, "nreloc"    );  task_out_u32(    task, u32(0x00000000)             );
+                task_elt(  task, "flags"     );  task_out_u32(    task, shall_be_same(u32(0x80000400),
+                                                                                      ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
+                                                                                        & shall_be_same(u32(0x00000000), U32(S_REGULAR))
+                                                                                        )
+                                                                                      | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
+                                                                                        & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
+                                                                                          | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+                                                                                          )
                                                                                         )
                                                                                       )
-                                                                                    )
-                                                                                   ));
-              task_elt(task, "reserved1"); task_out_u32(task, u32(0x00000000));
-              task_elt(task, "reserved2"); task_out_u32(task, u32(0x00000000));
-              task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
+                                                                                     ));
+                task_elt(task, "reserved1"); task_out_u32(task, u32(0x00000000));
+                task_elt(task, "reserved2"); task_out_u32(task, u32(0x00000000));
+                task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
 
-            } task_end_elt(task, "section_64");
+              } task_end_elt(task, "section_64");
 
-            task_beg_elt(task, "section_64"); {
+              task_at(task, 0x0100);
+              task_beg_elt(task, "section_64"); {
 
-              task_elt(task, "sectname"); task_out_v16u8(task, (V16U8){.str = u8"__stubs"});
-              task_elt(task, "segname"); task_out_v16u8(task, (V16U8){.str = u8"__TEXT"});
-              task_elt(task, "addr"); task_out_u64(task, u64(0x00000001'0000049c));
-              task_elt(task, "size"); task_out_u64(task, u64(0x00000000'0000000c));
-              task_elt(task, "offset"); task_out_u32(task, u32(0x0000049c));
-              task_elt(task, "align"); task_out_u32(task, u32(0x00000002));
-              task_elt(task, "reloff"); task_out_u32(task, u32(0x00000000));
-              task_elt(task, "nreloc"); task_out_u32(task, u32(0x00000000));
-              task_elt(task, "flags"); task_out_u32(task, shall_be_same(
-                                                            u32(0x80000408),
-                                                            ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
-                                                              & shall_be_same(u32(0x00000008), U32(S_SYMBOL_STUBS))
-                                                              )
-                                                            | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
-                                                              & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
-                                                                | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+                task_elt(task, "sectname"); task_out_v16u8(task, (V16U8){.str = u8"__stubs"});
+                task_elt(task, "segname"); task_out_v16u8(task, (V16U8){.str = u8"__TEXT"});
+                task_elt(task, "addr"); task_out_u64(task, u64(0x00000001'0000049c));
+                task_elt(task, "size"); task_out_u64(task, u64(0x00000000'0000000c));
+                task_elt(task, "offset"); task_out_u32(task, u32(0x0000049c));
+                task_elt(task, "align"); task_out_u32(task, u32(0x00000002));
+                task_elt(task, "reloff"); task_out_u32(task, u32(0x00000000));
+                task_elt(task, "nreloc"); task_out_u32(task, u32(0x00000000));
+                task_elt(task, "flags"); task_out_u32(task, shall_be_same(
+                                                              u32(0x80000408),
+                                                              ( ( shall_be_same(u32(0x000000FF), U32(SECTION_TYPE))
+                                                                & shall_be_same(u32(0x00000008), U32(S_SYMBOL_STUBS))
+                                                                )
+                                                              | ( shall_be_same(u32(0xFFFFFF00), U32(SECTION_ATTRIBUTES))
+                                                                & ( shall_be_same(u32(0x00000400), U32(S_ATTR_SOME_INSTRUCTIONS))
+                                                                  | shall_be_same(u32(0x80000000), U32(S_ATTR_PURE_INSTRUCTIONS))
+                                                                  )
                                                                 )
                                                               )
-                                                            )
-                                                          ));
-              task_elt(task, "reserved1"); task_elt(task, "index_into_indirect_symbol_table"); task_out_u32(task, u32(0x00000000));
-              task_elt(task, "reserved2"); task_elt(task, "stub_size"); task_out_u32(task, u32(0x0000000c));
-              task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
+                                                            ));
+                task_elt(task, "reserved1"); task_elt(task, "index_into_indirect_symbol_table"); task_out_u32(task, u32(0x00000000));
+                task_elt(task, "reserved2"); task_elt(task, "stub_size"); task_out_u32(task, u32(0x0000000c));
+                task_elt(task, "reserved3"); task_out_u32(task, u32(0x00000000));
 
-            } task_end_elt(task, "section_64");
+              } task_end_elt(task, "section_64");
 
-            task_beg_elt(task, "section_64"); {
+              task_at(task, 0x0150);
+              task_beg_elt(task, "section_64"); {
 
-              task_elt(task, "sectname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__cstring"}                           );
-              task_elt(task, "segname"    );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}                              );
-              task_elt(task, "addr"       );  task_out_u64(    task, u64(0x00000001'000004a8)                                );
-              task_elt(task, "size"       );  task_out_u64(    task, u64(0x00000000'00000005)                                );
-              task_elt(task, "offset"     );  task_out_u32(    task, shall_be_same(u32(0x000004a8), U32(1192))               );
-              task_elt(task, "align"      );  task_out_u32(    task, u32(0x00000000)                                         );
-              task_elt(task, "reloff"     );  task_out_u32(    task, u32(0x00000000)                                         );
-              task_elt(task, "nreloc"     );  task_out_u32(    task, u32(0x00000000)                                         );
-              task_elt(task, "flags"      );  task_out_u32(    task, shall_be_same(u32(0x00000002), U32(S_CSTRING_LITERALS)) );
-              task_elt(task, "reserved1"  );  task_out_u32(    task, u32(0x00000000)                                         );
-              task_elt(task, "reserved2"  );  task_out_u32(    task, u32(0x00000000)                                         );
-              task_elt(task, "reserved3"  );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "sectname"   );  task_out_v16u8(  task, (V16U8){.str = u8"__cstring"}                           );
+                task_elt(task, "segname"    );  task_out_v16u8(  task, (V16U8){.str = u8"__TEXT"}                              );
+                task_elt(task, "addr"       );  task_out_u64(    task, u64(0x00000001'000004a8)                                );
+                task_elt(task, "size"       );  task_out_u64(    task, u64(0x00000000'00000005)                                );
+                task_elt(task, "offset"     );  task_out_u32(    task, shall_be_same(u32(0x000004a8), U32(1192))               );
+                task_elt(task, "align"      );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "reloff"     );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "nreloc"     );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "flags"      );  task_out_u32(    task, shall_be_same(u32(0x00000002), U32(S_CSTRING_LITERALS)) );
+                task_elt(task, "reserved1"  );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "reserved2"  );  task_out_u32(    task, u32(0x00000000)                                         );
+                task_elt(task, "reserved3"  );  task_out_u32(    task, u32(0x00000000)                                         );
 
-            } task_end_elt(task, "section_64");
+              } task_end_elt(task, "section_64");
 
-            task_beg_elt(task, "section_64"); {
+              task_at(task, 0x01A0);
+              task_beg_elt(task, "section_64"); {
 
-              task_elt(task, "sectname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__unwind_info"}  );
-              task_elt(task, "segname"    );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}         );
-              task_elt(task, "addr"       );  task_out_u64(    task,  u64(0x00000001'000004b0)           );
-              task_elt(task, "size"       );  task_out_u64(    task,  u64(0x00000000'00000058)           );
-              task_elt(task, "offset"     );  task_out_u32(    task,  u32(0x000004b0)                    );
-              task_elt(task, "align"      );  task_out_u32(    task,  u32(0x00000002)                    );
-              task_elt(task, "reloff"     );  task_out_u32(    task,  u32(0x00000000)                    );
-              task_elt(task, "nreloc"     );  task_out_u32(    task,  u32(0x00000000)                    );
-              task_elt(task, "flags"      );  task_out_u32(    task,  u32(0x00000000)                    );
-              task_elt(task, "reserved1"  );  task_out_u32(    task,  u32(0x00000000)                    );
-              task_elt(task, "reserved2"  );  task_out_u32(    task,  u32(0x00000000)                    );
-              task_elt(task, "reserved3"  );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "sectname"   );  task_out_v16u8(  task,  (V16U8){.str = u8"__unwind_info"}  );
+                task_elt(task, "segname"    );  task_out_v16u8(  task,  (V16U8){.str = u8"__TEXT"}         );
+                task_elt(task, "addr"       );  task_out_u64(    task,  u64(0x00000001'000004b0)           );
+                task_elt(task, "size"       );  task_out_u64(    task,  u64(0x00000000'00000058)           );
+                task_elt(task, "offset"     );  task_out_u32(    task,  u32(0x000004b0)                    );
+                task_elt(task, "align"      );  task_out_u32(    task,  u32(0x00000002)                    );
+                task_elt(task, "reloff"     );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "nreloc"     );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "flags"      );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "reserved1"  );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "reserved2"  );  task_out_u32(    task,  u32(0x00000000)                    );
+                task_elt(task, "reserved3"  );  task_out_u32(    task,  u32(0x00000000)                    );
 
-            } task_end_elt(task, "section_64");
+              } task_end_elt(task, "section_64");
+
+            } task_end_elt(task, "sections");
 
           } task_end_elt(task, "segment_command_64");
 
-          // command 3
+          task_at(task, 0x01F0);
           task_beg_elt(task, "segment_command_64"); {
 
             task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
@@ -1206,26 +1234,32 @@ Bool work(TaskVarRef task) {
             task_elt(  task, "flags"     );  task_out_u32(    task,  shall_be_same(u32(0x00000010),
                                                                                    U32(SG_READ_ONLY)));
 
-            task_beg_elt(task, "section_64"); {
+            task_at(task, 0x0238);
+            task_beg_elt(task, "sections"); {
 
-              task_elt(task, "sectname"   );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__got"}         );
-              task_elt(task, "segname"    );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}  );
-              task_elt(task, "addr"       );                                                        task_out_u64(    task,  u64(0x00000001'00004000)          );
-              task_elt(task, "size"       );                                                        task_out_u64(    task,  u64(0x00000000'00000008)          );
-              task_elt(task, "offset"     );                                                        task_out_u32(    task,  u32(0x00004000)                   );
-              task_elt(task, "align"      );                                                        task_out_u32(    task,  u32(0x00000003)                   );
-              task_elt(task, "reloff"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
-              task_elt(task, "nreloc"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
-              task_elt(task, "flags"      );                                                        task_out_u32(    task,  shall_be_same(u32(0x00000006),
-                                                                                                                                          U32(S_NON_LAZY_SYMBOL_POINTERS)));
-              task_elt(task, "reserved1"  );  task_elt(task, "index_into_indirect_symbol_table");   task_out_u32(    task,  u32(0x00000001)                   );
-              task_elt(task, "reserved2"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
-              task_elt(task, "reserved3"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+              task_beg_elt(task, "section_64"); {
 
-            } task_end_elt(task, "section_64");
+                task_elt(task, "sectname"   );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__got"}         );
+                task_elt(task, "segname"    );                                                        task_out_v16u8(  task,  (V16U8){.str = u8"__DATA_CONST"}  );
+                task_elt(task, "addr"       );                                                        task_out_u64(    task,  u64(0x00000001'00004000)          );
+                task_elt(task, "size"       );                                                        task_out_u64(    task,  u64(0x00000000'00000008)          );
+                task_elt(task, "offset"     );                                                        task_out_u32(    task,  u32(0x00004000)                   );
+                task_elt(task, "align"      );                                                        task_out_u32(    task,  u32(0x00000003)                   );
+                task_elt(task, "reloff"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+                task_elt(task, "nreloc"     );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+                task_elt(task, "flags"      );                                                        task_out_u32(    task,  shall_be_same(u32(0x00000006),
+                                                                                                                                            U32(S_NON_LAZY_SYMBOL_POINTERS)));
+                task_elt(task, "reserved1"  );  task_elt(task, "index_into_indirect_symbol_table");   task_out_u32(    task,  u32(0x00000001)                   );
+                task_elt(task, "reserved2"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+                task_elt(task, "reserved3"  );                                                        task_out_u32(    task,  u32(0x00000000)                   );
+
+              } task_end_elt(task, "section_64");
+
+            } task_end_elt(task, "sections");
 
           } task_end_elt(task, "segment_command_64");
 
+          task_at(task, 0x0288);
           task_beg_elt(task, "segment_command_64"); {
 
             task_elt(  task, "cmd"       );  task_out_u32(    task,  shall_be_same(u32(0x00000019), U32(LC_SEGMENT_64))  );
@@ -1242,153 +1276,295 @@ Bool work(TaskVarRef task) {
 
           } task_end_elt(task, "segment_command_64");
 
+          task_at(task, 0x02D0);
           task_beg_elt(task, "linkedit_data_command"); {
 
-            task_elt(  task,  "cmd"             );  task_out_u32(  task,  shall_be_same(  u32(0x80000034),
-                                                                                          ( U32(0x34)
-                                                                                          | U32(LC_REQ_DYLD)
-                                                                                          )));
+            task_elt(  task,  "cmd"             );  task_out_u32(  task,  shall_be_same(
+                                                                            u32(0x80000034),
+                                                                            shall_be_same(
+                                                                              U32(LC_DYLD_CHAINED_FIXUPS),
+                                                                              ( U32(0x34)
+                                                                              | U32(LC_REQ_DYLD)
+                                                                              ))));
             task_elt(  task,  "cmdsize"         );  task_out_u32(  task,  u32(0x00000010));
             task_elt(  task,  "dataoff"         );  task_out_u32(  task,  u32(0x00008000));
             task_elt(  task,  "datasize"        );  task_out_u32(  task,  u32(0x00000060));
 
           } task_end_elt(task, "linkedit_data_command");
 
+          task_at(task, 0x02E0);
           task_beg_elt(task, "linkedit_data_command"); {
-            // LC_DYLD_EXPORTS_TRIE
-            task_out_u32(task, u32(0x80000033));
-            task_out_u32(task, u32(0x00000010));
-            task_out_u32(task, u32(0x00008060));
-            task_out_u32(task, u32(0x00000030));
+            task_elt(task, "cmd"       ); task_out_u32(task, shall_be_same(
+                                                               u32(0x80000033),
+                                                               shall_be_same(
+                                                                 U32(LC_DYLD_EXPORTS_TRIE),
+                                                                 ( U32(0x33)
+                                                                 | U32(LC_REQ_DYLD)
+                                                                 ))));
+            task_elt(task, "cmdsize"   ); task_out_u32(task, u32(0x00000010));
+            task_elt(task, "dataoff"   ); task_out_u32(task, u32(0x00008060));
+            task_elt(task, "datasize"  ); task_out_u32(task, u32(0x00000030));
           } task_end_elt(task, "linkedit_data_command");
 
+          task_at(task, 0x02F0);
           task_beg_elt(task, "symtab_command"); {
-            // LC_SYMTAB
-            task_out_u32(task, u32(0x00000002));
-            task_out_u32(task, u32(0x00000018));
-            task_out_u32(task, u32(0x00008098));
-            task_out_u32(task, u32(0x00000003));
-            task_out_u32(task, u32(0x000080d0));
-            task_out_u32(task, u32(0x00000028));
+            task_elt(task, "cmd"      ); task_out_u32(task, shall_be_same(u32(0x00000002), U32(LC_SYMTAB)));
+            task_elt(task, "cmdsize"  ); task_out_u32(task, u32(0x00000018));
+            task_elt(task, "symoff"   ); task_out_u32(task, u32(0x00008098));
+            task_elt(task, "nsyms"    ); task_out_u32(task, u32(0x00000003));
+            task_elt(task, "stroff"   ); task_out_u32(task, u32(0x000080d0));
+            task_elt(task, "strsize"  ); task_out_u32(task, u32(0x00000028));
           } task_end_elt(task, "symtab_command");
 
+          task_at(task, 0x0308);
           task_beg_elt(task, "dysymtab_command"); {
-            // LC_DYSYMTAB
-            task_out_u32(task, u32(0x0000000b));
-            task_out_u32(task, u32(0x00000050));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000002));
-            task_out_u32(task, u32(0x00000002));
-            task_out_u32(task, u32(0x00000001));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x000080c8));
-            task_out_u32(task, u32(0x00000002));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
+            task_elt(task, "cmd"             ); task_out_u32(task, shall_be_same(u32(0x0000000b), U32(LC_DYSYMTAB)));
+            task_elt(task, "cmdsize"         ); task_out_u32(task, u32(0x00000050));
+            task_elt(task, "ilocalsym"       ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nlocalsym"       ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "iextdefsym"      ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nextdefsym"      ); task_out_u32(task, u32(0x00000002));
+            task_elt(task, "iundefsym"       ); task_out_u32(task, u32(0x00000002));
+            task_elt(task, "nundefsym"       ); task_out_u32(task, u32(0x00000001));
+            task_elt(task, "tocoff"          ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "ntoc"            ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "modtaboff"       ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nmodtab"         ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "extrefsymoff"    ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nextrefsyms"     ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "indirectsymoff"  ); task_out_u32(task, u32(0x000080c8));
+            task_elt(task, "nindirectsyms"   ); task_out_u32(task, u32(0x00000002));
+            task_elt(task, "extreloff"       ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nextrel"         ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "locreloff"       ); task_out_u32(task, u32(0x00000000));
+            task_elt(task, "nlocrel"         ); task_out_u32(task, u32(0x00000000));
           } task_end_elt(task, "dysymtab_command");
 
+          task_at(task, 0x0358);
           task_beg_elt(task, "dylinker_command"); {
-            // LC_LOAD_DYLINKER
-            task_out_u32(task, u32(0x0000000e));
-            task_out_u32(task, u32(0x00000020));
-            task_out_u32(task, u32(0x0000000c));
-            // "/usr/lib/dyld"
-            task_out_u32(task, u32(0x7273752f));
-            task_out_u32(task, u32(0x62696c2f));
-            task_out_u32(task, u32(0x6c79642f));
-            task_out_u32(task, u32(0x00000064));
-            task_out_u32(task, u32(0x00000000));
+            task_elt(task, "cmd"); task_out_u32(task, shall_be_same(u32(0x0000000e), U32(LC_LOAD_DYLINKER)));
+            task_elt(task, "cmdsize"); task_out_u32(task, u32(0x00000020));
+            task_elt(task, "name");
+            task_out_u32(task, u32(0x0000000c)); // this.end - parent.begin
+            task_out_str(task, "/usr/lib/dyld");
+            // `cmdsize` is a multiple of 8 on a 64-bit arch
+            task_out_pad(task, sizeof(U64));
           } task_end_elt(task, "dylinker_command");
 
+          task_at(task, 0x0378);
           task_beg_elt(task, "uuid_command"); {
-            // LC_UUID
-            task_out_u32(task, u32(0x0000001b));
-            task_out_u32(task, u32(0x00000018));
-            task_out_u32(task, u32(0xfd260cec));
-            task_out_u32(task, u32(0x253118de));
-            task_out_u32(task, u32(0x528214bb));
-            task_out_u32(task, u32(0xd9594302));
+            task_elt(task, "cmd"); task_out_u32(task, shall_be_same(u32(0x0000001b), U32(LC_UUID)));
+            task_elt(task, "cmdsize"); task_out_u32(task, u32(0x00000018));
+            task_elt(task, "uuid");
+            task_out_v16u8(
+              task,
+              (V16U8){
+                .vec = {
+                  U8(0xEC), U8(0x0C), U8(0x26), U8(0xFD),
+                  U8(0xDE), U8(0x18), U8(0x31), U8(0x25),
+                  U8(0xBB), U8(0x14), U8(0x82), U8(0x52),
+                  U8(0x02), U8(0x43), U8(0x59), U8(0xD9),
+                }
+              }
+            );
           } task_end_elt(task, "uuid_command");
 
+          task_at(task, 0x0390);
           task_beg_elt(task, "build_version_command"); {
-            // LC_BUILD_VERSION
-            task_out_u32(task, u32(0x00000032));
+
+            task_elt(task, "cmd");
+            task_out_u32(
+              task,
+              shall_be_same(
+                u32(0x00000032),
+                U32(LC_BUILD_VERSION)
+              )
+            );
+
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000020));
+
+            task_elt(task, "platform");
+            task_out_u32(
+              task,
+              shall_be_same(
+                u32(0x00000001),
+                U32(PLATFORM_MACOS)
+              )
+            );
+
+            task_elt(task, "minos");
+            task_out_u32(
+              task,
+              shall_be_same(
+                u32(0x000f0000),
+                ( U32(u16(15))  << 0'2'0
+                | U32( u8( 0))  << 0'1'0
+                | U32( u8( 0))  << 0'0'0
+                )
+              )
+            );
+
+            task_elt(task, "sdk");
+            task_out_u32(
+              task,
+              shall_be_same(
+                u32(0x000f0500),
+                // X.Y.Z
+                ( U32(u16(15))  << 0'2'0
+                | U32( u8( 5))  << 0'1'0
+                | U32( u8( 0))  << 0'0'0
+                )
+              )
+            );
+
+            task_elt(task, "ntools");
             task_out_u32(task, u32(0x00000001));
-            task_out_u32(task, u32(0x000f0000));
-            task_out_u32(task, u32(0x000f0500));
-            task_out_u32(task, u32(0x00000001));
-            task_out_u32(task, u32(0x00000003));
-            task_out_u32(task, u32(0x048f0500));
+
+            task_beg_elt(task, "build_tool_version"); {
+
+              task_elt(task, "tool");
+              task_out_u32(
+                task,
+                shall_be_same(
+                  u32(0x00000003),
+                  U32(TOOL_LD)
+                )
+              );
+
+              task_elt(task, "version");
+              task_out_u32(
+                task,
+                shall_be_same(
+                  u32(0x048f0500),
+                  // X.Y.Z
+                  ( U32(u16(1167))  << 0'2'0
+                  | U32( u8(   5))  << 0'1'0
+                  | U32( u8(   0))  << 0'0'0
+                  )
+                )
+              );
+
+            } task_end_elt(task, "build_tool_version");
+
           } task_end_elt(task, "build_version_command");
 
+          task_at(task, 0x03B0);
           task_beg_elt(task, "source_version_command"); {
-            // LC_SOURCE_VERSION
-            task_out_u32(task, u32(0x0000002a));
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(u32(0x0000002a), U32(LC_SOURCE_VERSION)));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000010));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
+            task_out_u64(
+              task,
+              shall_be_same(
+                u64(0x00000000'00000000),
+                // A.B.C.D.E
+                ( U64(u24(0)) << 40
+                | U64(u10(0)) << 30
+                | U64(u10(0)) << 20
+                | U64(u10(0)) << 10
+                | U64(u10(0)) <<  0
+                )
+              )
+            );
           } task_end_elt(task, "source_version_command");
 
+          task_at(task, 0x03C0);
           task_beg_elt(task, "entry_point_command"); {
-            // LC_MAIN
-            task_out_u32(task, u32(0x80000028));
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(
+                                 u32(0x80000028),
+                                 shall_be_same(
+                                   U32(LC_MAIN),
+                                   ( U32(0x28)
+                                   | U32(LC_REQ_DYLD)
+                                   ))));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000018));
-            task_out_u32(task, u32(0x00000460));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
-            task_out_u32(task, u32(0x00000000));
+            task_elt(task, "entryoff");
+            //  _main - __TEXT
+            task_out_u64(task, u64(0x00000000'00000460));
+            task_elt(task, "stacksize");
+            //  0 or initial stack size
+            task_out_u64(task, u64(0x00000000'00000000));
           } task_end_elt(task, "entry_point_command");
 
-          task_beg_elt(task, "dylib_use_command"); {
-            // LC_LOAD_DYLIB
-            task_out_u32(task, u32(0x0000000c));
+          task_at(task, 0x03D8);
+          task_beg_elt(task, "dylib_command"); {
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(u32(0x0000000c), U32(LC_LOAD_DYLIB)));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000038));
-            task_out_u32(task, u32(0x00000018));
-            task_out_u32(task, u32(0x00000002));
-            task_out_u32(task, u32(0x05470000));
-            task_out_u32(task, u32(0x00010000));
-            // "/usr/lib/libSystem.B.dylib"
-            task_out_u32(task, u32(0x7273752f));
-            task_out_u32(task, u32(0x62696c2f));
-            task_out_u32(task, u32(0x62696c2f));
-            task_out_u32(task, u32(0x74737953));
-            task_out_u32(task, u32(0x422e6d65));
-            task_out_u32(task, u32(0x6c79642e));
-            task_out_u32(task, u32(0x00006269));
-            task_out_u32(task, u32(0x00000000));
-          } task_end_elt(task, "dylib_use_command");
+            task_beg_elt(task, "dylib"); {
+              task_elt(task, "name");
+              task_out_u32(task, u32(0x00000018));
+              task_elt(task, "timestamp");
+              // 1969-12-31 00:00:02 UTC
+              task_out_u32(task, u32(0x00000002));
+              task_elt(task, "current_version");
+              task_out_u32(
+                task,
+                shall_be_same(
+                  u32(0x05470000),
+                  // X.Y.Z
+                  ( U32(u16(1351))  << 0'2'0
+                  | U32( u8(   0))  << 0'1'0
+                  | U32( u8(   0))  << 0'0'0
+                  )
+                )
+              );
+              task_elt(task, "compatibility_version");
+              task_out_u32(
+                task,
+                shall_be_same(
+                  u32(0x00010000),
+                  ( U32(u16(1))  << 0'2'0
+                  | U32( u8(0))  << 0'1'0
+                  | U32( u8(0))  << 0'0'0
+                  )
+                )
+              );
+            } task_end_elt(task, "dylib");
 
+            task_out_str(task, "/usr/lib/libSystem.B.dylib");
+            task_out_pad(task, sizeof(U64));
+
+          } task_end_elt(task, "dylib_command");
+
+          task_at(task, 0x0410);
           task_beg_elt(task, "linkedit_data_command"); {
-            // LC_FUNCTION_STARTS
-            task_out_u32(task, u32(0x00000026));
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(u32(0x00000026), U32(LC_FUNCTION_STARTS)));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000010));
+            task_elt(task, "dataoff");
             task_out_u32(task, u32(0x00008090));
+            task_elt(task, "datasize");
             task_out_u32(task, u32(0x00000008));
           } task_end_elt(task, "linkedit_data_command");
 
+          task_at(task, 0x0420);
           task_beg_elt(task, "linkedit_data_command"); {
-            // LC_DATA_IN_CODE
-            task_out_u32(task, u32(0x00000029));
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(u32(0x00000029), U32(LC_DATA_IN_CODE)));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000010));
+            task_elt(task, "dataoff");
             task_out_u32(task, u32(0x00008098));
+            task_elt(task, "datasize");
             task_out_u32(task, u32(0x00000000));
           } task_end_elt(task, "linkedit_data_command");
 
+          task_at(task, 0x0430);
           task_beg_elt(task, "linkedit_data_command"); {
-            // LC_CODE_SIGNATURE
-            task_out_u32(task, u32(0x0000001d));
+            task_elt(task, "cmd");
+            task_out_u32(task, shall_be_same(u32(0x0000001d), U32(LC_CODE_SIGNATURE)));
+            task_elt(task, "cmdsize");
             task_out_u32(task, u32(0x00000010));
+            task_elt(task, "dataoff");
             task_out_u32(task, u32(0x00008100));
+            task_elt(task, "datasize");
             task_out_u32(task, u32(0x00000198));
           } task_end_elt(task, "linkedit_data_command");
 
@@ -1406,7 +1582,12 @@ Bool work(TaskVarRef task) {
 
         } task_end_elt(task, "load_commands");
 
+        task_at(task, 0x0460);
+
+        /*  task_out_pad(task, PAGE_SIZE);  */
+
         {
+          task_at(task, 0x0460);
           // __TEXT,__text._main
           task_out_u32(task, u32(0xd100c3ff));  //  sub sp, sp, #0x30
           task_out_u32(task, u32(0xa9027bfd));  //  stp x29, x30, [sp, #0x20]
@@ -1424,11 +1605,13 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x9100c3ff));  //  add sp, sp, #0x30
           task_out_u32(task, u32(0xd65f03c0));  //  ret
 
+          task_at(task, 0x049C);
           // ?
           task_out_u32(task, u32(0x90000030));
           task_out_u32(task, u32(0xf9400210));
           task_out_u32(task, u32(0xd61f0200));
 
+          task_at(task, 0x04A8);
           // "reow"
           task_out_u32(task, u32(0x776f6572));
           task_out_u32(task, u32(0x00000000));
@@ -1443,6 +1626,7 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000040));
           task_out_u32(task, u32(0x00000040));
 
+          task_at(task, 0x04D8);
           // _puts
           task_out_u32(task, u32(0x0000049c));
           task_out_u32(task, u32(0x00000000));
@@ -1461,6 +1645,7 @@ Bool work(TaskVarRef task) {
           // buf_skip(&BUF, +0x3B00);
           task_out_pad(task, 0x4000);
 
+          task_at(task, 0x4000);
           task_out_u64(task, u64(0x80000000'00000000));
 
           // buf_skip(&BUF, +0x3FFC);
@@ -1468,6 +1653,7 @@ Bool work(TaskVarRef task) {
 
           // 16 KiB of zeros
 
+          task_at(task, 0x8000);
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x00000020));
           task_out_u32(task, u32(0x00000050));
@@ -1491,12 +1677,14 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000201));
 
           // "_puts"
+          task_at(task, 0x8054);
           task_out_u32(task, u32(0x75705f00));
           task_out_u32(task, u32(0x00007374));
 
           task_out_u32(task, u32(0x00000000));
 
           // "_"
+          task_at(task, 0x8060);
           task_out_u32(task, u32(0x005f0100));
           task_out_u32(task, u32(0x00000012));
           task_out_u32(task, u32(0x00000200));
@@ -1512,6 +1700,7 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x09007265));
           task_out_u32(task, u32(0x6e69616d));
 
+          task_at(task, 0x808C);
           task_out_u32(task, u32(0x00000d00));
           task_out_u32(task, u32(0x000008e0));
           task_out_u32(task, u32(0x00000000));
@@ -1530,6 +1719,7 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000002));
           task_out_u32(task, u32(0x00000002));
 
+          task_at(task, 0x80D0);
           // "__mh_execute_header"
           // "_main"
           // "_puts"
@@ -1547,12 +1737,14 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x00000000));
 
+          task_at(task, 0x8100);
           task_out_u32(task, u32(0xc00cdefa));
           task_out_u32(task, u32(0x95010000));
           task_out_u32(task, u32(0x01000000));
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x14000000));
 
+          task_at(task, 0x8114);
           task_out_u32(task, u32(0x020cdefa));
           task_out_u32(task, u32(0x81010000));
           task_out_u32(task, u32(0x00040200));
@@ -1574,15 +1766,18 @@ Bool work(TaskVarRef task) {
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x00000000));
 
+          task_at(task, 0x8160);
           task_out_u32(task, u32(0x3c000000));
           task_out_u32(task, u32(0x00000000));
           task_out_u32(task, u32(0x01000000));
 
+          task_at(task, 0x816C);
           // "reow"
           task_out_u32(task, u32(0x776f6572));
           // ".bin"
           task_out_u32(task, u32(0x6e69622e));
 
+          task_at(task, 0x8174);
           task_out_u32(task, u32(0xa3d84c00));
           task_out_u32(task, u32(0xf17b0c0b));
           task_out_u32(task, u32(0xed0e7b23));
@@ -2149,6 +2344,24 @@ output_open(
 );
 
 static inline Bool
+output_at(
+  TaskVarRef task,
+  Idx idx
+);
+
+static inline Bool
+output_beg_elt(
+  TaskVarRef task,
+  Tag tag
+);
+
+static inline Bool
+output_elt(
+  TaskVarRef task,
+  Tag tag
+);
+
+static inline Bool
 output_out_u32(
   TaskVarRef task,
   U32 val
@@ -2169,7 +2382,19 @@ output_out_v16u8(
 static inline Bool
 output_out_pad(
   TaskVarRef task,
-  Size size
+  Stride stride
+);
+
+static inline Bool
+output_out_str(
+  TaskVarRef  task,
+  Str         str
+);
+
+static inline Bool
+output_end_elt(
+  TaskVarRef task,
+  Tag tag
 );
 
 static inline Bool
@@ -2216,10 +2441,15 @@ output_open(
   *output = (OutputTaskVar){
     .task = (Task){
 
+      .at         = output_at         ,
+      .beg_elt    = output_beg_elt    ,
+      .elt        = output_elt        ,
       .out_u32    = output_out_u32    ,
       .out_u64    = output_out_u64    ,
       .out_v16u8  = output_out_v16u8  ,
       .out_pad    = output_out_pad    ,
+      .out_str    = output_out_str    ,
+      .end_elt    = output_end_elt    ,
       .end        = output_end        ,
 
     },
@@ -2237,12 +2467,74 @@ output_open(
 }
 
 static inline Bool
+output_at(
+  TaskVarRef task,
+  Idx idx
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "at %.8zX",
+    output->buf.at,
+    idx
+  );
+  should(
+    output->buf.at == idx,
+    "at offset %0.8zX, should be at offset %0.8zX",
+    output->buf.at,
+    idx
+  );
+  return true;
+}
+
+static inline Bool
+output_beg_elt(
+  TaskVarRef task,
+  Tag tag
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "<%s>",
+    output->buf.at,
+    tag
+  );
+  return true;
+}
+
+static inline Bool
+output_elt(
+  TaskVarRef task,
+  Tag tag
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "<%s>",
+    output->buf.at,
+    tag
+  );
+  return true;
+}
+
+static inline Bool
 output_out_u32(
   TaskVarRef task,
   U32 val
 ) {
   shall(task != nullptr);
   OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "u32 "
+    "%0.8"PRIX32" (%"PRIu32")",
+    output->buf.at,
+    (uint32_t)val,
+    (uint32_t)val
+  );
   buf_out_u32(&output->buf, val);
   return true;
 }
@@ -2254,8 +2546,41 @@ output_out_u64(
 ) {
   shall(task != nullptr);
   OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "u64 "
+    "%0.16"PRIX64" (%"PRIu64")",
+    output->buf.at,
+    (uint64_t)val,
+    (uint64_t)val
+  );
   buf_out_u64(&output->buf, val);
   return true;
+}
+
+static inline Str
+byte_str(
+  U8 byte
+) {
+  static Str strs[(Size)UINT8_MAX + 1] = {
+     [0x00]="<NUL>"  , [0x01]="<SOH>"  , [0x02]="<STX>"  , [0x03]="<ETX>"  ,  [0x04]="<EOT>"  , [0x05]="<ENQ>"  , [0x06]="<ACK>"  , [0x07]="<BEL>"  ,
+     [0x08]="<BS>"   , [0x09]="<HT>"   , [0x0A]="<LF>"   , [0x0B]="<VT>"   ,  [0x0C]="<FF>"   , [0x0D]="<CR>"   , [0x0E]="<SO>"   , [0x0F]="<SI>"   ,
+     [0x10]="<DLE>"  , [0x11]="<DC1>"  , [0x12]="<DC2>"  , [0x13]="<DC3>"  ,  [0x14]="<DC4>"  , [0x15]="<NAK>"  , [0x16]="<SYN>"  , [0x17]="<ETB>"  ,
+     [0x18]="<CAN>"  , [0x19]="<EM>"   , [0x1A]="<SUB>"  , [0x1B]="<ESC>"  ,  [0x1C]="<FS>"   , [0x1D]="<GS>"   , [0x1E]="<RS>"   , [0x1F]="<US>"   ,
+     [0x20]="<SP>"   , [0x21]="!"      , [0x22]="\""     , [0x23]="#"      ,  [0x24]="$"      , [0x25]="%"      , [0x26]="&"      , [0x27]="'"      ,
+     [0x28]="("      , [0x29]=")"      , [0x2A]="*"      , [0x2B]="+"      ,  [0x2C]=","      , [0x2D]="-"      , [0x2E]="."      , [0x2F]="/"      ,
+     [0x30]="0"      , [0x31]="1"      , [0x32]="2"      , [0x33]="3"      ,  [0x34]="4"      , [0x35]="5"      , [0x36]="6"      , [0x37]="7"      ,
+     [0x38]="8"      , [0x39]="9"      , [0x3A]=":"      , [0x3B]=";"      ,  [0x3C]="<"      , [0x3D]="="      , [0x3E]=">"      , [0x3F]="?"      ,
+     [0x40]="@"      , [0x41]="A"      , [0x42]="B"      , [0x43]="C"      ,  [0x44]="D"      , [0x45]="E"      , [0x46]="F"      , [0x47]="G"      ,
+     [0x48]="H"      , [0x49]="I"      , [0x4A]="J"      , [0x4B]="K"      ,  [0x4C]="L"      , [0x4D]="M"      , [0x4E]="N"      , [0x4F]="O"      ,
+     [0x50]="P"      , [0x51]="Q"      , [0x52]="R"      , [0x53]="S"      ,  [0x54]="T"      , [0x55]="U"      , [0x56]="V"      , [0x57]="W"      ,
+     [0x58]="X"      , [0x59]="Y"      , [0x5A]="Z"      , [0x5B]="["      ,  [0x5C]="\\"     , [0x5D]="]"      , [0x5E]="^"      , [0x5F]="_"      ,
+     [0x60]="`"      , [0x61]="a"      , [0x62]="b"      , [0x63]="c"      ,  [0x64]="d"      , [0x65]="e"      , [0x66]="f"      , [0x67]="g"      ,
+     [0x68]="h"      , [0x69]="i"      , [0x6A]="j"      , [0x6B]="k"      ,  [0x6C]="l"      , [0x6D]="m"      , [0x6E]="n"      , [0x6F]="o"      ,
+     [0x70]="p"      , [0x71]="q"      , [0x72]="r"      , [0x73]="s"      ,  [0x74]="t"      , [0x75]="u"      , [0x76]="v"      , [0x77]="w"      ,
+     [0x78]="x"      , [0x79]="y"      , [0x7A]="z"      , [0x7B]="{"      ,  [0x7C]="|"      , [0x7D]="}"      , [0x7E]="~"      , [0x7F]="<DEL>"  ,
+  };
+  return byte <= 0x7F ? strs[byte] : ".";
 }
 
 static inline Bool
@@ -2265,6 +2590,48 @@ output_out_v16u8(
 ) {
   shall(task != nullptr);
   OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "v16u8 "
+    "%0.2X%0.2X%0.2X%0.2X "
+    "%0.2X%0.2X%0.2X%0.2X "
+    "%0.2X%0.2X%0.2X%0.2X "
+    "%0.2X%0.2X%0.2X%0.2X "
+    "(%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s)",
+    output->buf.at,
+    (unsigned int)val.vec[ 0],
+    (unsigned int)val.vec[ 1],
+    (unsigned int)val.vec[ 2],
+    (unsigned int)val.vec[ 3],
+    (unsigned int)val.vec[ 4],
+    (unsigned int)val.vec[ 5],
+    (unsigned int)val.vec[ 6],
+    (unsigned int)val.vec[ 7],
+    (unsigned int)val.vec[ 8],
+    (unsigned int)val.vec[ 9],
+    (unsigned int)val.vec[10],
+    (unsigned int)val.vec[11],
+    (unsigned int)val.vec[12],
+    (unsigned int)val.vec[13],
+    (unsigned int)val.vec[14],
+    (unsigned int)val.vec[15],
+    byte_str(val.vec[ 0]),
+    byte_str(val.vec[ 1]),
+    byte_str(val.vec[ 2]),
+    byte_str(val.vec[ 3]),
+    byte_str(val.vec[ 4]),
+    byte_str(val.vec[ 5]),
+    byte_str(val.vec[ 6]),
+    byte_str(val.vec[ 7]),
+    byte_str(val.vec[ 8]),
+    byte_str(val.vec[ 9]),
+    byte_str(val.vec[10]),
+    byte_str(val.vec[11]),
+    byte_str(val.vec[12]),
+    byte_str(val.vec[13]),
+    byte_str(val.vec[14]),
+    byte_str(val.vec[15])
+  );
   buf_out_v16u8(&output->buf, val);
   return true;
 }
@@ -2272,11 +2639,51 @@ output_out_v16u8(
 static inline Bool
 output_out_pad(
   TaskVarRef task,
-  Size size
+  Stride stride
 ) {
   shall(task != nullptr);
   OutputTaskVarRef output = (OutputTaskVarRef)task;
-  buf_out_pad(&output->buf, size);
+  trace(
+    "%.8zX: "
+    "pad %zu",
+    output->buf.at,
+    stride
+  );
+  buf_out_pad(&output->buf, stride);
+  return true;
+}
+
+static inline Bool
+output_out_str(
+  TaskVarRef task,
+  Str str
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "str "
+    "\"%s\"",
+    output->buf.at,
+    str
+  );
+  buf_out_str(&output->buf, str, SIZE_MAX);
+  return true;
+}
+
+static inline Bool
+output_end_elt(
+  TaskVarRef task,
+  Tag tag
+) {
+  shall(task != nullptr);
+  OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace(
+    "%.8zX: "
+    "</%s>",
+    output->buf.at,
+    tag
+  );
   return true;
 }
 
@@ -2286,6 +2693,7 @@ output_end(
 ) {
   shall(task != nullptr);
   OutputTaskVarRef output = (OutputTaskVarRef)task;
+  trace("end");
   shall(output_wf(output));
   FILE *const file = fopen(output->file_path, "w");
   if (file == nullptr) return false;
