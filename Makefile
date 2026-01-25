@@ -185,6 +185,8 @@ ECHO:=$\
 
 ENV:=/usr/bin/env
 
+ETAGS:=etags
+
 # HD=hexdump $(hexdump-flags)
 
 HD=xxd $(xxd-flags)
@@ -262,6 +264,10 @@ diff-flags:=\
   --side-by-side\
   --suppress-common-lines\
   --width=130
+
+etags-flags:=\
+  --declarations\
+  --ignore-indentation
 
 git-diff-flags:=\
   --anchored=\
@@ -343,6 +349,12 @@ diff-them=\
   $(DIFF)\
     $(call quote.1,$(first-prerequisite))\
     $(second-prerequisite)
+
+etags-them=\
+  $(ETAGS)\
+    $(etags-flags)\
+    --output=$(call quote.1,$(target))\
+    $(foreach p,$(prerequisite-set),$(call quote.1,$p))
 
 hexdump-it=\
   $(call space.2,$\
@@ -440,6 +452,11 @@ otool-it=\
         have/reow.otool:\
           have/reow.bin\
           ;$(otool-it)
+
+  .PHONY:@tags
+  @all:@tags
+  @tags:TAGS
+  TAGS:nb.c;$(etags-them)
 
 
 # Special Rules
